@@ -1,0 +1,45 @@
+<html>
+  <head>
+    <style type="text/css" media="screen">
+      .deselect--dropdown-item {
+        cursor: default;
+        padding-top: 0.25em;
+        padding-bottom: 0.25em;
+      }
+      .deselect--dropdown-item:hover {
+        background-color: lightgray;
+      }
+      .deselect--highlight {
+        font-weight: bold;
+        background-color: yellow;
+        text-decoration: underline;
+      }
+      .deselect--dropdown {
+        background-color: white;
+        border-width: 1px;
+        border-style: solid;
+      }
+    </style>
+  </head>
+  <body>
+    <select id="select">
+      <option value="1">first</option>
+      <option value="2">second</option>
+      <option value="3">third</option>
+      <option value="4">fourth</option>
+      <option value="5">fifth</option>
+      <option value="6">sixth</option>
+      <option value="7">seventh</option>
+      <option value="8">eighth</option>
+      <option value="9">ninth</option>
+      <option value="10">tenth</option>
+      <option value="11">eleventh</option>
+      <option value="12">twelfth</option>
+    </select>
+    <script type="text/javascript" src="../dist/deselect.min.js"></script>
+    <script>
+      deselect("select")
+    </script>
+  </body>
+</html>
+
