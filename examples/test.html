@@ -19,26 +19,34 @@
         border-width: 1px;
         border-style: solid;
       }
+      .deselect--focus {
+        background-color: lightgray;
+      }
     </style>
   </head>
   <body>
     <select id="select">
-      <option value="1">first</option>
-      <option value="2">second</option>
-      <option value="3">third</option>
-      <option value="4">fourth</option>
-      <option value="5">fifth</option>
-      <option value="6">sixth</option>
-      <option value="7">seventh</option>
-      <option value="8">eighth</option>
-      <option value="9">ninth</option>
-      <option value="10">tenth</option>
-      <option value="11">eleventh</option>
-      <option value="12">twelfth</option>
+      <option value="1">Afghanistan</option>
+      <option value="2">Burundi</option>
+      <option value="3">Canada</option>
+      <option value="4">Djibouti</option>
+      <option value="5">Estonia</option>
+      <option value="6">France</option>
+      <option value="7">Germany</option>
+      <option value="8">Holland</option>
+      <option value="9">India</option>
+      <option value="10">Jamaica</option>
+      <option value="11">Kuwait</option>
+      <option value="12">Liberia</option>
+      <option value="13">Morocco</option>
     </select>
     <script type="text/javascript" src="../dist/deselect.js"></script>
     <script>
-      deselect("select")
+      deselect("select", {
+        input: {
+          placeholder: 'Start typing your country',
+        }
+      });
     </script>
   </body>
 </html>

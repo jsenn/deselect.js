@@ -50,18 +50,6 @@
     dropdown.style.display = 'block';
   }
 
-  function focusDropdownItem(li) {
-    li.style.border = "1px solid red"
-  }
-
-  function unfocusDropdownItem(li) {
-    li.style.border = "none";
-  }
-
-  function selectDropdownItem(li) {
-    li.click()
-  }
-
   /* Return a callback that will call the given (0-arity) function `f` after the
    * callback hasn't been called in the given number of milliseconds. This can
    * be used as a keypress event callback to avoid calling the function `f` too
@@ -75,13 +63,13 @@
       ms = 100;
     }
 
-    return function() {
+    return function(e) {
       /* If there's an active timer, nuke it. */
       if (timeoutID === void 0) {
         window.clearTimeout(timeoutID);
       }
       /* [re]start the timer. */
-      timeoutID = window.setTimeout(f, ms);
+      timeoutID = window.setTimeout(function() { return f(e); }, ms);
     };
   }
 
@@ -107,7 +95,8 @@
    *
    */
   window.deselect = function(selectID, userOpts) {
-    var opts, select, input, dropdown, dropdownContainer, container, current_click;
+    var opts, select, input, dropdown, dropdownContainer,
+        container, keynav, lastMoveWasUp, current_click;
     /* Default options */
     opts = {
       container: {
@@ -139,7 +128,9 @@
       },
       highlight: {
         class: 'deselect--highlight'
-      }
+      },
+
+      focusClass: 'deselect--focus',
     };
     /* Optionally update defaults with user-given options. */
     if (userOpts !== void 0) {
@@ -207,39 +198,60 @@
     /* Put the whole thing directly after the <select> (before its next sibling) */
     select.parentNode.insertBefore(container, select.nextSibling);
 
-    container.addEventListener('keydown', _.keyNavigator(
-      function() {
-        var xs = [input].concat([].slice.call(dropdown.children));
-        return xs;
-      },
-      function(item) {
-        console.log("focussing " + item.outerHTML);
-        if (item !== input) {
-          focusDropdownItem(item);
+    lastMoveWasUp = false;
+    keynav = new _.KeyNavigator(container, input, {
+      getDown: function(node) {
+        lastMoveWasUp = false;
+        switch (node) {
+          case input:
+            return _.firstElementChild(dropdown);
+          case _.lastElementChild(dropdown):
+            return input; /* wrap around */
+          default:
+            return _.nextElementSibling(node);
         }
       },
-      function(item) {
-        console.log("unfocussing " + item.outerHTML);
-        if (item !== input) {
-          unfocusDropdownItem(item);
+      getUp: function(node) {
+        lastMoveWasUp = true;
+        switch (node) {
+          case input:
+            return _.lastElementChild(dropdown); /* wrap around */
+          case _.firstElementChild(dropdown):
+            return input;
+          default:
+            return _.previousElementSibling(node);
         }
       },
-      function(item) {
-        console.log("selecting " + item.outerHTML);
-        if (item !== input) {
-          selectDropdownItem(item);
+      focus: function(node) {
+        _.addClass(opts.focusClass, node);
+        _.maybeScrollIntoView(node, dropdown, lastMoveWasUp);
+      },
+      unfocus: function(node) {
+        if (node === void 0) {
+          keynav.focussed = null;
+        } else {
+          _.removeClass(opts.focusClass, node);
         }
+      },
+      select: function(node) {
+        node.click();
       }
-    ), false);
+    });
 
     /* When the user's done typing, show them which options match their query. */
-    input.addEventListener('keyup', keypresser(function() {
-      updateDropdown(dropdown, input, select.children, input.value, opts);
+    input.addEventListener('keyup', keypresser(function(e) {
+      if (e.keyCode !== 13 && /* enter */
+          e.keyCode !== 32 && /* space */
+          !(37 <= e.keyCode && 40 >= e.keyCode)) { /* arrow keys */
+        updateDropdown(dropdown, input, select.children, input.value, opts);
+        keynav.go(input);
+      }
     }), false);
 
     /* Always show the user their options when the <input> is focussed. */
     input.addEventListener('focus', function() {
       updateDropdown(dropdown, input, select.children, input.value, opts);
+      keynav.go(input);
     }, false);
 
     /* Keep track of the currently clicked element so we can hide the dropdown. */
@@ -269,24 +281,39 @@
 module.exports = (function() {
   'use strict';
 
-  var exports = {};
-
-  exports.forEach = function(xs, f) {
+  function forEach(xs, f) {
     for (var i = 0; i < xs.length; i++) {
       f(xs[i]);
     }
-  };
+  }
 
-  exports.map = function(f, xs) {
+  function map(f, xs) {
     var ys = [];
-    for (var i = 0; i < xs.length; i++) {
-      ys.push(f(xs[i]));
-    }
+    forEach(xs, function(x) {
+      ys.push(f(x));
+    });
     return ys;
-  };
+  }
+
+  function filter(p, xs) {
+    var xs_p = [];
+    forEach(xs, function(x) {
+      if (p(x))
+        xs_p.push(x);
+    });
+    return xs_p;
+  }
+
+  function some(p, xs) {
+    for (var i = 0; i < xs.length; i++) {
+      if (p(xs[i]))
+        return true;
+    }
+    return false;
+  }
 
   /* Merge o2 into o1, recursing into nested objects. Modifies o1. */
-  exports.merge = function(o1, o2) {
+  function merge(o1, o2) {
     for (var attr in o2) {
       if (o2.hasOwnProperty(attr)) {
         if (typeof o2[attr] === 'object' &&
@@ -300,31 +327,17 @@ module.exports = (function() {
         }
       }
     }
-  };
-
-  exports.hasAncestor = function(ancestor, el) {
-    /* Travel up the DOM tree until we either find the given `ancestor` or can't
-     * go higher.
-     */
-    var current = el.parentNode;
-    while (current !== null) { /* `document.parentNode` -> `null`. */
-      if (current === ancestor) {
-        return true;
-      }
-      current = current.parentNode;
-    }
-    return false;
-  };
+  }
 
   /* Filter the given `options` down to which contain the given `query` as a
    * substring, and then sort the results by the index at which the substring
    * starts. Where the indices are equal, prefer shorter strings.
    */
-  exports.search = function(query, options) {
+  function search(query, options) {
     var matches = [];
-    exports.forEach(options, function(o) {
+    forEach(options, function(o) {
       var s = o.textContent;
-      var substring_index = s.indexOf(query);
+      var substring_index = s.toLowerCase().indexOf(query);
       if (substring_index !== -1) {
         matches.push({
           object: o,
@@ -352,9 +365,9 @@ module.exports = (function() {
       /* They have the same index and length, so we'll consider them equal. */
       return 0;
     });
-  };
+  }
 
-  exports.highlightString = function(s, start, end, opts) {
+  function highlightString(s, start, end, opts) {
     if (start === end) { /* Nothing to highlight! */
       return s;
     }
@@ -362,68 +375,169 @@ module.exports = (function() {
     span.className = opts.class;
     span.textContent = s.substring(start, end);
     return s.substring(0, start) + span.outerHTML + s.substring(end);
-  };
+  }
 
-  exports.keyNavigator = function(getItems, focusItem, unfocusItem, selectItem) {
-    var focussedIndex = 0,
-        keys = {
-          enter: 13,
-          space: 32,
+  function maybeScrollIntoView(object, container, alignToTop) {
+    var oRect = object.getBoundingClientRect(),
+        cRect = container.getBoundingClientRect();
+    if (oRect.top < cRect.top       ||
+        oRect.bottom > cRect.bottom ||
+        oRect.right > cRect.right   ||
+        oRect.Left < cRect.left) {
+      object.scrollIntoView(alignToTop);
+    }
+  }
 
-          left:  37,
-          up:    38,
-          right: 39,
-          down:  40
-        };
-    return function(e) {
-      var items;
+  function searchList(start, next, shouldStop, isMatch) {
+    var current = start;
+    while (!shouldStop(current)) {
+      if (isMatch(current)) {
+        return current;
+      }
+      current = next(current);
+    }
+    return null;
+  }
 
+  function addClass(className, el) {
+    var classes = [].slice.call(el.classList);
+    if (!some(function(s) { return s === className; }, classes)) {
+      classes.push(className);
+    }
+    el.className = classes.join(' ');
+  }
+
+  function removeClass(className, el) {
+    var classes = [].slice.call(el.classList);
+    var newClasses = filter(function(s) { return s !== className; }, classes);
+    el.className = newClasses.join(' ');
+  }
+
+  function hasAncestor(ancestor, el) {
+    return searchList(el.parentNode,
+                      function(node) { return node.parentNode; },
+                      function(node) { return node === null; },
+                      function(node) { return node === ancestor; });
+  }
+
+  function previousElementSibling(el) {
+    return searchList(el.previousSibling,
+                      function(node) { return node.previousSibling; },
+                      function(node) { return node === null; },
+                      function(node) { return node instanceof window.Element; });
+  }
+
+  function nextElementSibling(el) {
+    return searchList(el.nextSibling,
+                      function(node) { return node.nextSibling; },
+                      function(node) { return node === null; },
+                      function(node) { return node instanceof window.Element; });
+  }
+
+  function firstElementChild(el) {
+    return searchList(el.firstChild,
+                      function(node) { return node.nextSibling; },
+                      function(node) { return node === null; },
+                      function(node) { return node instanceof window.Element; });
+  }
+
+  function lastElementChild(el) {
+    return searchList(el.lastChild,
+                      function(node) { return node.previousSibling; },
+                      function(node) { return node === null; },
+                      function(node) { return node instanceof window.Element; });
+  }
+
+  function always(val) {
+    return function() { return val; };
+  }
+
+  var KeyNavigator = function (el, initial, methods) {
+    this.focussed = initial;
+
+    if (methods) {
+      for (name in methods) {
+        if (methods.hasOwnProperty(name)) {
+          this[name] = methods[name];
+        }
+      }
+    }
+
+    this.go = function(node) {
+      if (node !== null) {
+        this.unfocus(this.focussed);
+        this.focus(node);
+        this.focussed = node;
+      }
+    };
+
+    /* Must be bound to this object. */
+    var onkeydown = function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey) {
-        return true; /* bail */
-      }
-
-      items = getItems();
-      if (items.length === 0) {
-        return true; /* bail */
-      }
-      if (items.length === 1) {
-        focussedIndex = 0;
-        return true; /* bail */
+        return true;
       }
 
       switch (e.keyCode) {
-        case keys.space:
-        case keys.enter: {
-          selectItem(items[focussedIndex]);
+        case 13:
+        case 32:
           e.stopPropagation();
-          return false;
-        }
+          return this.select(this.focussed);
 
-        case keys.left:
-        case keys.up: {
-          unfocusItem(items[focussedIndex]);
-          focussedIndex = (items.length + focussedIndex - 1) % items.length
-          focusItem(items[focussedIndex]);
+        case 37:
           e.preventDefault();
           e.stopPropagation();
-          return false;
-        }
-        case keys.right:
-        case keys.down: {
-          unfocusItem(items[focussedIndex]);
-          focussedIndex = (items.length + focussedIndex + 1) % items.length
-          focusItem(items[focussedIndex]);
+          return this.go(this.getLeft(this.focussed));
+        case 38:
           e.preventDefault();
           e.stopPropagation();
-          return false;
-        }
+          return this.go(this.getUp(this.focussed));
+        case 39:
+          e.preventDefault();
+          e.stopPropagation();
+          return this.go(this.getRight(this.focussed));
+        case 40:
+          e.preventDefault();
+          e.stopPropagation();
+          return this.go(this.getDown(this.focussed));
+
         default:
-          return true; /* bail */
+          return true;
       }
     };
+
+    el.addEventListener('keydown', onkeydown.bind(this), false);
   };
 
-  return exports;
+  KeyNavigator.prototype = {
+    getLeft: always(null),
+    getDown: always(null),
+    getRight: always(null),
+    getUp: always(null),
+    focus: always(void 0),
+    unfocus: always(void 0),
+    select: always(void 0)
+  };
+
+  return {
+    forEach: forEach,
+    map: map,
+    filter: filter,
+    merge: merge,
+    hasAncestor: hasAncestor,
+    search: search,
+    highlightString: highlightString,
+    addClass: addClass,
+    removeClass: removeClass,
+    maybeScrollIntoView: maybeScrollIntoView,
+    previousElementSibling: previousElementSibling,
+    nextElementSibling: nextElementSibling,
+    firstElementChild: firstElementChild,
+    lastElementChild: lastElementChild,
+    always: always,
+    KeyNavigator: KeyNavigator
+  };
+
 }());
+
 
 },{}]},{},[1,2]);

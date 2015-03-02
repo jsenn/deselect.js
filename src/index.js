@@ -49,18 +49,6 @@
     dropdown.style.display = 'block';
   }
 
-  function focusDropdownItem(li) {
-    li.style.border = "1px solid red"
-  }
-
-  function unfocusDropdownItem(li) {
-    li.style.border = "none";
-  }
-
-  function selectDropdownItem(li) {
-    li.click()
-  }
-
   /* Return a callback that will call the given (0-arity) function `f` after the
    * callback hasn't been called in the given number of milliseconds. This can
    * be used as a keypress event callback to avoid calling the function `f` too
@@ -74,13 +62,13 @@
       ms = 100;
     }
 
-    return function() {
+    return function(e) {
       /* If there's an active timer, nuke it. */
       if (timeoutID === void 0) {
         window.clearTimeout(timeoutID);
       }
       /* [re]start the timer. */
-      timeoutID = window.setTimeout(f, ms);
+      timeoutID = window.setTimeout(function() { return f(e); }, ms);
     };
   }
 
@@ -106,7 +94,8 @@
    *
    */
   window.deselect = function(selectID, userOpts) {
-    var opts, select, input, dropdown, dropdownContainer, container, current_click;
+    var opts, select, input, dropdown, dropdownContainer,
+        container, keynav, lastMoveWasUp, current_click;
     /* Default options */
     opts = {
       container: {
@@ -138,7 +127,9 @@
       },
       highlight: {
         class: 'deselect--highlight'
-      }
+      },
+
+      focusClass: 'deselect--focus',
     };
     /* Optionally update defaults with user-given options. */
     if (userOpts !== void 0) {
@@ -206,39 +197,60 @@
     /* Put the whole thing directly after the <select> (before its next sibling) */
     select.parentNode.insertBefore(container, select.nextSibling);
 
-    container.addEventListener('keydown', _.keyNavigator(
-      function() {
-        var xs = [input].concat([].slice.call(dropdown.children));
-        return xs;
-      },
-      function(item) {
-        console.log("focussing " + item.outerHTML);
-        if (item !== input) {
-          focusDropdownItem(item);
+    lastMoveWasUp = false;
+    keynav = new _.KeyNavigator(container, input, {
+      getDown: function(node) {
+        lastMoveWasUp = false;
+        switch (node) {
+          case input:
+            return _.firstElementChild(dropdown);
+          case _.lastElementChild(dropdown):
+            return input; /* wrap around */
+          default:
+            return _.nextElementSibling(node);
         }
       },
-      function(item) {
-        console.log("unfocussing " + item.outerHTML);
-        if (item !== input) {
-          unfocusDropdownItem(item);
+      getUp: function(node) {
+        lastMoveWasUp = true;
+        switch (node) {
+          case input:
+            return _.lastElementChild(dropdown); /* wrap around */
+          case _.firstElementChild(dropdown):
+            return input;
+          default:
+            return _.previousElementSibling(node);
         }
       },
-      function(item) {
-        console.log("selecting " + item.outerHTML);
-        if (item !== input) {
-          selectDropdownItem(item);
+      focus: function(node) {
+        _.addClass(opts.focusClass, node);
+        _.maybeScrollIntoView(node, dropdown, lastMoveWasUp);
+      },
+      unfocus: function(node) {
+        if (node === void 0) {
+          keynav.focussed = null;
+        } else {
+          _.removeClass(opts.focusClass, node);
         }
+      },
+      select: function(node) {
+        node.click();
       }
-    ), false);
+    });
 
     /* When the user's done typing, show them which options match their query. */
-    input.addEventListener('keyup', keypresser(function() {
-      updateDropdown(dropdown, input, select.children, input.value, opts);
+    input.addEventListener('keyup', keypresser(function(e) {
+      if (e.keyCode !== 13 && /* enter */
+          e.keyCode !== 32 && /* space */
+          !(37 <= e.keyCode && 40 >= e.keyCode)) { /* arrow keys */
+        updateDropdown(dropdown, input, select.children, input.value, opts);
+        keynav.go(input);
+      }
     }), false);
 
     /* Always show the user their options when the <input> is focussed. */
     input.addEventListener('focus', function() {
       updateDropdown(dropdown, input, select.children, input.value, opts);
+      keynav.go(input);
     }, false);
 
     /* Keep track of the currently clicked element so we can hide the dropdown. */
