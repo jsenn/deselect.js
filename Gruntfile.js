@@ -1,6 +1,11 @@
 module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    jasmine_nodejs: {
+      test: {
+        specs: 'spec/pure.spec.js'
+      }
+    },
     browserify: {
       build: {
         src: 'src/*.js',
@@ -18,8 +23,11 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.loadNpmTasks('grunt-jasmine-nodejs');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-browserify');
-  grunt.registerTask('default', ['browserify', 'uglify']);
+
+  grunt.registerTask('test', ['jasmine_nodejs']);
+  grunt.registerTask('default', ['test', 'browserify', 'uglify']);
 };
 
