@@ -386,14 +386,14 @@ module.exports = (function() {
   }
 
   function addClass(className, el) {
-    var classes = [].slice.call(el.classList);
+    var classes = el.className.split(/\s+/);
     if (!some(function(s) { return s === className; }, classes))
       classes.push(className);
     el.className = classes.join(' ');
   }
 
   function removeClass(className, el) {
-    var classes = [].slice.call(el.classList);
+    var classes = el.className.split(/\s+/);
     var newClasses = filter(function(s) { return s !== className; }, classes);
     el.className = newClasses.join(' ');
   }
