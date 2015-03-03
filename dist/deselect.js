@@ -57,10 +57,6 @@
    */
   function keypresser(f, ms) {
     var timeoutID;
-    /* Use 100 as a default for `ms`. */
-    if (ms === void 0)
-      ms = 100;
-
     return function(e) {
       /* If there's an active timer, nuke it. */
       if (timeoutID === void 0)
@@ -234,7 +230,7 @@
         updateDropdown(dropdown, input, select.children, input.value, opts);
         keynav.go(input);
       }
-    }), false);
+    }, 100), false);
 
     /* Always show the user their options when the <input> is focussed. */
     input.addEventListener('focus', function() {
