@@ -54,7 +54,7 @@ module.exports = (function() {
     }
   }
 
-  /* Filter the given `options` down to which contain the given `query` as a
+  /* Filter the given <option>s down to which contain the given query as a
    * substring, and then sort the results by the index at which the substring
    * starts. Where the indices are equal, prefer shorter strings.
    */
@@ -169,7 +169,7 @@ module.exports = (function() {
     return function() { return val; };
   }
 
-  var KeyNavigator = function (el, initial, methods) {
+  var KeyNavigator = function(el, initial, methods) {
     this.focussed = initial;
 
     merge(this, methods);

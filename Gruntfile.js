@@ -1,4 +1,9 @@
 module.exports = function(grunt) {
+  var banner = '/*!\n' +
+               ' * deselect.js v<%= pkg.version %> (<%= pkg.homepage %>)\n' +
+               ' * Licensed under the <%= pkg.license %> ' +
+                              '(<%= pkg.homepage %>/blob/master/LICENSE)\n' +
+               ' */\n';
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     jshint: {
@@ -18,15 +23,14 @@ module.exports = function(grunt) {
       build: {
         src: 'src/*.js',
         dest: 'dist/<%= pkg.name %>.js'
+      },
+      options: {
+        banner: banner
       }
     },
     uglify: {
       options: {
-        banner: '/*!\n' +
-                ' * deselect.js v<%= pkg.version %> (<%= pkg.homepage %>)\n' +
-                ' * Licensed under the <%= pkg.license %>' +
-                               '(<%= pkg.homepage %>/blob/master/LICENSE)\n' +
-                ' */\n'
+        banner: banner
       },
       build: {
         src: 'dist/<%= pkg.name %>.js',

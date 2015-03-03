@@ -1,3 +1,8 @@
+/*!
+ * deselect.js v0.1.0 (https://github.com/jsenn/deselect.js)
+ * Licensed under the MIT License (https://github.com/jsenn/deselect.js/blob/master/LICENSE)
+ */
+
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function () {
   'use strict';
@@ -253,10 +258,9 @@
     input.addEventListener('blur', function() {
       var clicked_dropdown = current_click !== null &&
                              _.hasAncestor(dropdown, current_click);
-      if (!clicked_dropdown) {
+      if (!clicked_dropdown)
         clearDropdown(dropdown);
-        keynav.unfocus(input);
-      }
+      keynav.unfocus(keynav.focussed);
     }, false);
   };
 }());
@@ -319,7 +323,7 @@ module.exports = (function() {
     }
   }
 
-  /* Filter the given `options` down to which contain the given `query` as a
+  /* Filter the given <option>s down to which contain the given query as a
    * substring, and then sort the results by the index at which the substring
    * starts. Where the indices are equal, prefer shorter strings.
    */
@@ -434,7 +438,7 @@ module.exports = (function() {
     return function() { return val; };
   }
 
-  var KeyNavigator = function (el, initial, methods) {
+  var KeyNavigator = function(el, initial, methods) {
     this.focussed = initial;
 
     merge(this, methods);

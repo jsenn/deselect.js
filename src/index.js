@@ -252,10 +252,9 @@
     input.addEventListener('blur', function() {
       var clicked_dropdown = current_click !== null &&
                              _.hasAncestor(dropdown, current_click);
-      if (!clicked_dropdown) {
+      if (!clicked_dropdown)
         clearDropdown(dropdown);
-        keynav.unfocus(input);
-      }
+      keynav.unfocus(keynav.focussed);
     }, false);
   };
 }());
