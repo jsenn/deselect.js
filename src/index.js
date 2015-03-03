@@ -99,28 +99,38 @@
     /* Default options */
     opts = {
       container: {
-        id: '',
-        class: 'deselect--wrapper'
+        attrs: {
+          id: '',
+          className: 'deselect--wrapper'
+        }
       },
       input: {
-        id: '',
-        type: 'text',
-        value: '',
-        placeholder: '',
-        class: 'deselect--search-box'
+        attrs: {
+          id: '',
+          type: 'text',
+          value: '',
+          placeholder: '',
+          className: 'deselect--search-box'
+        }
       },
       dropdown: {
-        id: '',
-        class: 'deselect--dropdown',
-        maxHeight: '10em',
-        overflowX: 'hidden',
-        overflowY: 'scroll',
-        zIndex: 100,
-        pixelsFromInput: 0
+        attrs: {
+          id: '',
+          className: 'deselect--dropdown',
+        },
+        style: {
+          maxHeight: '10em',
+          overflowX: 'hidden',
+          overflowY: 'scroll',
+          zIndex: 100,
+          marginTop: 0
+        }
       },
       dropdownContainer: {
-        id: '',
-        class: 'deselect--dropdown-container'
+        attrs: {
+          id: '',
+          className: 'deselect--dropdown-container'
+        }
       },
       dropdownItem: {
         class: 'deselect--dropdown-item',
@@ -132,59 +142,44 @@
       focusClass: 'deselect--focus',
     };
     /* Optionally update defaults with user-given options. */
-    if (userOpts !== void 0) {
+    if (userOpts !== void 0)
       _.merge(opts, userOpts);
-    }
 
     select = window.document.getElementById(selectID);
 
     /* Create the <input> into which the user can enter their searches. */
     input = window.document.createElement('input');
-
-    input.id = opts.input.id;
-    input.type = opts.input.type;
-    input.className = opts.input.class;
-    input.value = opts.input.value;
-    input.placeholder = opts.input.placeholder;
-
     input.disabled = select.disabled;
     input.required = select.required;
-
+    _.merge(input, opts.input.attrs);
     input.style.width = '100%';
 
     /* Create the <ul> that will represent the list of <option>s that match the
      * user's query.
      */
     dropdown = window.document.createElement('ul');
-    dropdown.id = opts.dropdown.id;
-    dropdown.className = opts.dropdown.class;
+    _.merge(dropdown, opts.dropdown.attrs);
 
-    dropdown.style.maxHeight = opts.dropdown.maxHeight;
-    dropdown.style.overflowX = opts.dropdown.overflowX;
-    dropdown.style.overflowY = opts.dropdown.overflowY;
+    _.merge(dropdown.style, opts.dropdown.style);
 
     /* Override default list styling. */
     dropdown.style.listStyle = 'none';
     dropdown.style.padding = 0;
-    dropdown.style.marginTop = opts.dropdown.pixelsFromInput;
 
     dropdown.style.width = '100%';
     dropdown.style.position = 'absolute';
-    dropdown.style.zIndex = opts.dropdown.zIndex;
 
     dropdown.style.display = 'none';
 
     dropdownContainer = window.document.createElement('div');
-    dropdownContainer.id = opts.dropdownContainer.id;
-    dropdownContainer.className = opts.dropdownContainer.class;
+    _.merge(dropdownContainer, opts.dropdownContainer.attrs);
 
     dropdownContainer.style.width = '100%';
     dropdownContainer.style.position = 'relative';
 
     /* Create the <div> in which the entire widget will reside. */
     container = window.document.createElement('div');
-    container.id = opts.container.id;
-    container.className = opts.container.class;
+    _.merge(container, opts.container.attrs);
 
     /* Stack the dolls. */
     container.appendChild(input);
@@ -270,6 +265,7 @@
                              _.hasAncestor(dropdown, current_click);
       if (!clicked_dropdown) {
         clearDropdown(dropdown);
+        keynav.unfocus(input);
       }
     }, false);
   };

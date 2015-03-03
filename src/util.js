@@ -62,7 +62,7 @@ module.exports = (function() {
     var matches = [];
     forEach(options, function(o) {
       var s = o.textContent;
-      var substring_index = s.toLowerCase().indexOf(query);
+      var substring_index = s.toLowerCase().indexOf(query.toLowerCase());
       if (substring_index !== -1) {
         matches.push({
           object: o,
