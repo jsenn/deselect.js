@@ -26,9 +26,8 @@
       }, options);
     }
 
-    if (search_results.length === 0) {
+    if (search_results.length === 0)
       return; /* Don't bother displaying the dropdown. */
-    }
 
     /* Display the results */
     _.forEach(search_results, function (result) {
@@ -36,8 +35,8 @@
       li.className = opts.dropdownItem.class;
 
       li.innerHTML = _.highlightString(result.result, result.index,
-                                     result.index + searchString.length,
-                                     opts.highlight);
+                                       result.index + searchString.length,
+                                       opts.highlight);
       li.addEventListener('click', function() {
         result.object.selected = true;
         input.value = this.textContent;
@@ -50,7 +49,7 @@
     dropdown.style.display = 'block';
   }
 
-  /* Return a callback that will call the given (0-arity) function `f` after the
+  /* Return a callback that will call the given function `f` after the
    * callback hasn't been called in the given number of milliseconds. This can
    * be used as a keypress event callback to avoid calling the function `f` too
    * many times. (i.e. If the user types fast, there's probably no value in
@@ -59,15 +58,13 @@
   function keypresser(f, ms) {
     var timeoutID;
     /* Use 100 as a default for `ms`. */
-    if (ms === void 0) {
+    if (ms === void 0)
       ms = 100;
-    }
 
     return function(e) {
       /* If there's an active timer, nuke it. */
-      if (timeoutID === void 0) {
+      if (timeoutID === void 0)
         window.clearTimeout(timeoutID);
-      }
       /* [re]start the timer. */
       timeoutID = window.setTimeout(function() { return f(e); }, ms);
     };
@@ -101,22 +98,17 @@
     opts = {
       container: {
         attrs: {
-          id: '',
           className: 'deselect--wrapper'
         }
       },
       input: {
         attrs: {
-          id: '',
           type: 'text',
-          value: '',
-          placeholder: '',
           className: 'deselect--search-box'
         }
       },
       dropdown: {
         attrs: {
-          id: '',
           className: 'deselect--dropdown',
         },
         style: {
@@ -129,7 +121,6 @@
       },
       dropdownContainer: {
         attrs: {
-          id: '',
           className: 'deselect--dropdown-container'
         }
       },
@@ -139,8 +130,9 @@
       highlight: {
         class: 'deselect--highlight'
       },
-
-      focusClass: 'deselect--focus',
+      focus: {
+        class: 'deselect--focus'
+      }
     };
     /* Optionally update defaults with user-given options. */
     if (userOpts !== void 0)
@@ -160,16 +152,17 @@
      */
     dropdown = window.document.createElement('ul');
     _.merge(dropdown, opts.dropdown.attrs);
-
     _.merge(dropdown.style, opts.dropdown.style);
+    dropdown.style.width = '100%';
 
     /* Override default list styling. */
     dropdown.style.listStyle = 'none';
     dropdown.style.padding = 0;
 
-    dropdown.style.width = '100%';
+    /* Make sure it doesn't drop everything else down with it! */
     dropdown.style.position = 'absolute';
 
+    /* Don't display it until we're told to. */
     dropdown.style.display = 'none';
 
     dropdownContainer = window.document.createElement('div');
@@ -218,14 +211,14 @@
         }
       },
       focus: function(node) {
-        _.addClass(opts.focusClass, node);
+        _.addClass(opts.focus.class, node);
         _.maybeScrollIntoView(node, dropdown, lastMoveWasUp);
       },
       unfocus: function(node) {
         if (node === void 0) {
           keynav.focussed = null;
         } else {
-          _.removeClass(opts.focusClass, node);
+          _.removeClass(opts.focus.class, node);
         }
       },
       select: function(node) {
@@ -350,28 +343,25 @@ module.exports = (function() {
 
     return matches.sort(function(a, b) {
       /* First, sort by index. */
-      if (a.index < b.index) {
+      if (a.index < b.index)
         return -1;
-      }
-      if (a.index > b.index) {
+      if (a.index > b.index)
         return 1;
-      }
+
       /* They have the same index, so we'll prefer the shortest one. */
-      if (a.result.length < b.result.length) {
+      if (a.result.length < b.result.length)
         return -1;
-      }
-      if (a.result.length > b.result.length) {
+      if (a.result.length > b.result.length)
         return 1;
-      }
+
       /* They have the same index and length, so we'll consider them equal. */
       return 0;
     });
   }
 
   function highlightString(s, start, end, opts) {
-    if (start === end) { /* Nothing to highlight! */
+    if (start === end) /* Nothing to highlight! */
       return s;
-    }
     var span = window.document.createElement('span');
     span.className = opts.class;
     span.textContent = s.substring(start, end);
@@ -392,9 +382,8 @@ module.exports = (function() {
   function searchList(start, next, shouldStop, isMatch) {
     var current = start;
     while (!shouldStop(current)) {
-      if (isMatch(current)) {
+      if (isMatch(current))
         return current;
-      }
       current = next(current);
     }
     return null;
@@ -402,9 +391,8 @@ module.exports = (function() {
 
   function addClass(className, el) {
     var classes = [].slice.call(el.classList);
-    if (!some(function(s) { return s === className; }, classes)) {
+    if (!some(function(s) { return s === className; }, classes))
       classes.push(className);
-    }
     el.className = classes.join(' ');
   }
 
@@ -421,32 +409,29 @@ module.exports = (function() {
                       function(node) { return node === ancestor; });
   }
 
-  function previousElementSibling(el) {
-    return searchList(el.previousSibling,
-                      function(node) { return node.previousSibling; },
-                      function(node) { return node === null; },
+  function searchForElement(start, next) {
+    return searchList(start, next, function(node) { return node === null; },
                       function(node) { return node instanceof window.Element; });
+  }
+
+  function previousElementSibling(el) {
+    return searchForElement(el.previousSibling,
+                            function(node) { return node.previousSibling; });
   }
 
   function nextElementSibling(el) {
-    return searchList(el.nextSibling,
-                      function(node) { return node.nextSibling; },
-                      function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+    return searchForElement(el.nextSibling,
+                            function(node) { return node.nextSibling; });
   }
 
   function firstElementChild(el) {
-    return searchList(el.firstChild,
-                      function(node) { return node.nextSibling; },
-                      function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+    return searchForElement(el.firstChild,
+                            function(node) { return node.nextSibling; });
   }
 
   function lastElementChild(el) {
-    return searchList(el.lastChild,
-                      function(node) { return node.previousSibling; },
-                      function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+    return searchForElement(el.lastChild,
+                            function(node) { return node.previousSibling; });
   }
 
   function always(val) {
@@ -456,13 +441,7 @@ module.exports = (function() {
   var KeyNavigator = function (el, initial, methods) {
     this.focussed = initial;
 
-    if (methods) {
-      for (var name in methods) {
-        if (methods.hasOwnProperty(name)) {
-          this[name] = methods[name];
-        }
-      }
-    }
+    merge(this, methods);
 
     this.go = function(node) {
       if (node !== null) {
@@ -474,9 +453,8 @@ module.exports = (function() {
 
     /* Must be bound to this object. */
     var onkeydown = function(e) {
-      if (e.altKey || e.ctrlKey || e.shiftKey) {
+      if (e.altKey || e.ctrlKey || e.shiftKey)
         return true;
-      }
 
       switch (e.keyCode) {
         case 13:

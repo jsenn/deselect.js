@@ -74,28 +74,25 @@ module.exports = (function() {
 
     return matches.sort(function(a, b) {
       /* First, sort by index. */
-      if (a.index < b.index) {
+      if (a.index < b.index)
         return -1;
-      }
-      if (a.index > b.index) {
+      if (a.index > b.index)
         return 1;
-      }
+
       /* They have the same index, so we'll prefer the shortest one. */
-      if (a.result.length < b.result.length) {
+      if (a.result.length < b.result.length)
         return -1;
-      }
-      if (a.result.length > b.result.length) {
+      if (a.result.length > b.result.length)
         return 1;
-      }
+
       /* They have the same index and length, so we'll consider them equal. */
       return 0;
     });
   }
 
   function highlightString(s, start, end, opts) {
-    if (start === end) { /* Nothing to highlight! */
+    if (start === end) /* Nothing to highlight! */
       return s;
-    }
     var span = window.document.createElement('span');
     span.className = opts.class;
     span.textContent = s.substring(start, end);
@@ -116,9 +113,8 @@ module.exports = (function() {
   function searchList(start, next, shouldStop, isMatch) {
     var current = start;
     while (!shouldStop(current)) {
-      if (isMatch(current)) {
+      if (isMatch(current))
         return current;
-      }
       current = next(current);
     }
     return null;
@@ -126,9 +122,8 @@ module.exports = (function() {
 
   function addClass(className, el) {
     var classes = [].slice.call(el.classList);
-    if (!some(function(s) { return s === className; }, classes)) {
+    if (!some(function(s) { return s === className; }, classes))
       classes.push(className);
-    }
     el.className = classes.join(' ');
   }
 
@@ -145,32 +140,29 @@ module.exports = (function() {
                       function(node) { return node === ancestor; });
   }
 
-  function previousElementSibling(el) {
-    return searchList(el.previousSibling,
-                      function(node) { return node.previousSibling; },
-                      function(node) { return node === null; },
+  function searchForElement(start, next) {
+    return searchList(start, next, function(node) { return node === null; },
                       function(node) { return node instanceof window.Element; });
+  }
+
+  function previousElementSibling(el) {
+    return searchForElement(el.previousSibling,
+                            function(node) { return node.previousSibling; });
   }
 
   function nextElementSibling(el) {
-    return searchList(el.nextSibling,
-                      function(node) { return node.nextSibling; },
-                      function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+    return searchForElement(el.nextSibling,
+                            function(node) { return node.nextSibling; });
   }
 
   function firstElementChild(el) {
-    return searchList(el.firstChild,
-                      function(node) { return node.nextSibling; },
-                      function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+    return searchForElement(el.firstChild,
+                            function(node) { return node.nextSibling; });
   }
 
   function lastElementChild(el) {
-    return searchList(el.lastChild,
-                      function(node) { return node.previousSibling; },
-                      function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+    return searchForElement(el.lastChild,
+                            function(node) { return node.previousSibling; });
   }
 
   function always(val) {
@@ -180,13 +172,7 @@ module.exports = (function() {
   var KeyNavigator = function (el, initial, methods) {
     this.focussed = initial;
 
-    if (methods) {
-      for (var name in methods) {
-        if (methods.hasOwnProperty(name)) {
-          this[name] = methods[name];
-        }
-      }
-    }
+    merge(this, methods);
 
     this.go = function(node) {
       if (node !== null) {
@@ -198,9 +184,8 @@ module.exports = (function() {
 
     /* Must be bound to this object. */
     var onkeydown = function(e) {
-      if (e.altKey || e.ctrlKey || e.shiftKey) {
+      if (e.altKey || e.ctrlKey || e.shiftKey)
         return true;
-      }
 
       switch (e.keyCode) {
         case 13:
