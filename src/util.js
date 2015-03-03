@@ -32,15 +32,20 @@ module.exports = (function() {
     return false;
   }
 
+  /* See http://stackoverflow.com/a/6000016 */
+  function isFunction(object) {
+    return !!(object && object.constructor && object.call && object.apply);
+  }
+
   /* Merge o2 into o1, recursing into nested objects. Modifies o1. */
   function merge(o1, o2) {
     for (var attr in o2) {
       if (o2.hasOwnProperty(attr)) {
-        if (typeof o2[attr] === 'object' &&
-            typeof o1[attr] === 'object' &&
+        if (typeof o2[attr] === 'object' && typeof o1[attr] === 'object' &&
             /* `typeof null` -> "object" */
-            o2[attr] !== null &&
-            o1[attr] !== null) {
+            o2[attr] !== null && o1[attr] !== null &&
+            /* `typeof <function>` ~> "object" */
+            !isFunction(o2[attr]) && !isFunction(o1[attr])) {
           merge(o1[attr], o2[attr]);
         } else {
           o1[attr] = o2[attr];
@@ -103,7 +108,7 @@ module.exports = (function() {
     if (oRect.top < cRect.top       ||
         oRect.bottom > cRect.bottom ||
         oRect.right > cRect.right   ||
-        oRect.Left < cRect.left) {
+        oRect.left < cRect.left) {
       object.scrollIntoView(alignToTop);
     }
   }
@@ -176,7 +181,7 @@ module.exports = (function() {
     this.focussed = initial;
 
     if (methods) {
-      for (name in methods) {
+      for (var name in methods) {
         if (methods.hasOwnProperty(name)) {
           this[name] = methods[name];
         }
@@ -242,6 +247,8 @@ module.exports = (function() {
     forEach: forEach,
     map: map,
     filter: filter,
+    some: some,
+    isFunction: isFunction,
     merge: merge,
     hasAncestor: hasAncestor,
     search: search,

@@ -1,6 +1,14 @@
 module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    jshint: {
+      all: ['Gruntfile.js', 'src/**/*.js', 'spec/**/*.js'],
+      options: {
+        'eqeqeq': true,
+        'forin': true,
+        'unused': true
+      }
+    },
     jasmine_nodejs: {
       test: {
         specs: 'spec/pure.spec.js'
@@ -14,7 +22,11 @@ module.exports = function(grunt) {
     },
     uglify: {
       options: {
-        banner: '/*!\n * deselect.js v<%= pkg.version %> (<%= pkg.homepage %>)\n * Licensed under the <%= pkg.license %> (<%= pkg.homepage %>/blob/master/LICENSE)\n */\n'
+        banner: '/*!\n' +
+                ' * deselect.js v<%= pkg.version %> (<%= pkg.homepage %>)\n' +
+                ' * Licensed under the <%= pkg.license %>' +
+                               '(<%= pkg.homepage %>/blob/master/LICENSE)\n' +
+                ' */\n'
       },
       build: {
         src: 'dist/<%= pkg.name %>.js',
@@ -23,11 +35,13 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-jasmine-nodejs');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-browserify');
 
-  grunt.registerTask('test', ['jasmine_nodejs']);
-  grunt.registerTask('default', ['test', 'browserify', 'uglify']);
+  grunt.registerTask('test', ['jshint', 'jasmine_nodejs']);
+  grunt.registerTask('build', ['browserify', 'uglify']);
+  grunt.registerTask('default', ['test', 'build']);
 };
 
