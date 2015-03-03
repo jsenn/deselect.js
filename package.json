@@ -1,7 +1,7 @@
 {
   "name": "deselect",
   "version": "0.1.0",
-  "description": "Progressive enhancement of <select>s",
+  "description": "Progressive enhancement for <select> elements",
   "main": "src/index.js",
   "scripts": {
     "test": "grunt test"
@@ -11,7 +11,7 @@
     "url": "git://github.com/jsenn/deselect.js.git"
   },
   "author": "John Senneker <johnsenneker@fastmail.in>",
-  "license": "GPL",
+  "license": "MIT License",
   "bugs": {
     "url": "https://github.com/jsenn/deselect.js/issues"
   },
