@@ -337,11 +337,3 @@ describe('maybeScrollIntoView', function() {
   });
 });
 
-describe('searchList', function() {
-  it('is pending');
-});
-
-describe('KeyNavigator', function() {
-  it('is pending');
-});
-
