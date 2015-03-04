@@ -37,6 +37,11 @@ module.exports = (function() {
     return !!(object && object.constructor && object.call && object.apply);
   }
 
+  /* See http://stackoverflow.com/a/4775737 */
+  function isArray(object) {
+    return Object.prototype.toString.call(object) === '[object Array]';
+  }
+
   /* Merge the second object into the first, recursing into nested objects.
    * Modifies the first object.
    */
@@ -251,6 +256,7 @@ module.exports = (function() {
     filter: filter,
     some: some,
     isFunction: isFunction,
+    isArray: isArray,
     merge: merge,
     hasAncestor: hasAncestor,
     search: search,

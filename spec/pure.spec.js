@@ -182,6 +182,28 @@ describe('isFunction', function() {
   });
 });
 
+describe('isArray', function() {
+  it('should return a Boolean', function() {
+    _.forEach([[], void 0, null, {}, true, _.always()], function(o) {
+      expect(_.isArray(o)).toEqual(jasmine.any(Boolean));
+    });
+  });
+
+  it('should return false for any non-array', function() {
+    var nonArrs = [void 0, null, 1, 3.14, 'abc', {}, _.always(), false];
+    _.forEach(nonArrs, function(na) {
+      expect(_.isArray(na)).toBe(false);
+    });
+  });
+
+  it('should return true for any array', function() {
+    var arrs = [[], [1], [1, 2, 3], [1, 'abc', 3.14, []]];
+    _.forEach(arrs, function(a) {
+      expect(_.isArray(a)).toBe(true);
+    });
+  });
+});
+
 describe('merge', function() {
   it("shouldn't change an object when merged with {}", function() {
     var o1 = {},
