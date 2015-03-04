@@ -306,7 +306,9 @@ module.exports = (function() {
     return !!(object && object.constructor && object.call && object.apply);
   }
 
-  /* Merge o2 into o1, recursing into nested objects. Modifies o1. */
+  /* Merge the second object into the first, recursing into nested objects.
+   * Modifies the first object.
+   */
   function merge(o1, o2) {
     for (var attr in o2) {
       if (o2.hasOwnProperty(attr)) {
@@ -359,6 +361,9 @@ module.exports = (function() {
     });
   }
 
+  /* Wrap the substring of s between the given start and end indices in a
+   * <span>, which is configured with the given opt[ion]s.
+   */
   function highlightString(s, start, end, opts) {
     if (start === end) /* Nothing to highlight! */
       return s;
@@ -368,6 +373,9 @@ module.exports = (function() {
     return s.substring(0, start) + span.outerHTML + s.substring(end);
   }
 
+  /* Scroll the given object into view iff some part of it lies outside its
+   * container.
+   */
   function maybeScrollIntoView(object, container, alignToTop) {
     var oRect = object.getBoundingClientRect(),
         cRect = container.getBoundingClientRect();
@@ -377,16 +385,6 @@ module.exports = (function() {
         oRect.left < cRect.left) {
       object.scrollIntoView(alignToTop);
     }
-  }
-
-  function searchList(start, next, shouldStop, isMatch) {
-    var current = start;
-    while (!shouldStop(current)) {
-      if (isMatch(current))
-        return current;
-      current = next(current);
-    }
-    return null;
   }
 
   function addClass(className, el) {
@@ -400,6 +398,16 @@ module.exports = (function() {
     var classes = el.className.split(/\s+/);
     var newClasses = filter(function(s) { return s !== className; }, classes);
     el.className = newClasses.join(' ');
+  }
+
+  function searchList(start, next, shouldStop, isMatch) {
+    var current = start;
+    while (!shouldStop(current)) {
+      if (isMatch(current))
+        return current;
+      current = next(current);
+    }
+    return null;
   }
 
   function hasAncestor(ancestor, el) {
@@ -441,7 +449,7 @@ module.exports = (function() {
   var KeyNavigator = function(el, initial, methods) {
     this.focussed = initial;
 
-    merge(this, methods);
+    merge(this, methods); /* See KeyNavigator.prototype */
 
     this.go = function(node) {
       if (node !== null) {
@@ -462,24 +470,26 @@ module.exports = (function() {
       }.bind(this);
 
       if (e.altKey || e.ctrlKey || e.shiftKey)
+        /* Ignore the event. */
         return true;
 
       switch (e.keyCode) {
-        case 13:
-        case 32:
+        case 13: /* space */
+        case 32: /* enter */
           e.stopPropagation();
           return this.select(this.focussed);
 
-        case 37:
+        case 37: /* left arrow key */
           return handleNavigationTo(this.getLeft(this.focussed));
-        case 38:
+        case 38: /* up arrow key */
           return handleNavigationTo(this.getUp(this.focussed));
-        case 39:
+        case 39: /* right arrow key */
           return handleNavigationTo(this.getRight(this.focussed));
-        case 40:
+        case 40: /* down arrow key */
           return handleNavigationTo(this.getDown(this.focussed));
 
         default:
+          /* Ignore the event. */
           return true;
       }
     }.bind(this);
@@ -488,13 +498,13 @@ module.exports = (function() {
   };
 
   KeyNavigator.prototype = {
-    getLeft: always(null),
-    getDown: always(null),
+    getUp:    always(null),
+    getDown:  always(null),
+    getLeft:  always(null),
     getRight: always(null),
-    getUp: always(null),
-    focus: always(void 0),
-    unfocus: always(void 0),
-    select: always(void 0)
+    focus:    always(void 0),
+    unfocus:  always(void 0),
+    select:   always(void 0)
   };
 
   return {
