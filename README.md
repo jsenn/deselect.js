@@ -10,7 +10,7 @@ TODO
 
 ## Development
 
-You'll need to install [git](git-scm.com/downloads) and
+You'll need to install [git](http://git-scm.com/downloads) and
 [Node.js](https://nodejs.org/download/). Once you have those, run the following.
 
 ```bash
@@ -29,5 +29,5 @@ version of deselect.js. Either can be included as-is in your HTML to use the
 `deselect.js` library.
 
 ## TODO
-See [deselect.js/TODO](https://github.com/jsenn/blob/master/TODO)
+See [deselect.js/TODO](https://github.com/deselect.js/jsenn/blob/master/TODO)
 
