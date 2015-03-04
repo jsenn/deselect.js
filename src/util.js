@@ -184,6 +184,14 @@ module.exports = (function() {
 
     /* Must be bound to this object. */
     var onkeydown = function(e) {
+      var handleNavigationTo = function(node) {
+        if (node !== null) {
+          e.preventDefault();
+          e.stopPropagation();
+          return this.go(node);
+        }
+      }.bind(this);
+
       if (e.altKey || e.ctrlKey || e.shiftKey)
         return true;
 
@@ -194,28 +202,20 @@ module.exports = (function() {
           return this.select(this.focussed);
 
         case 37:
-          e.preventDefault();
-          e.stopPropagation();
-          return this.go(this.getLeft(this.focussed));
+          return handleNavigationTo(this.getLeft(this.focussed));
         case 38:
-          e.preventDefault();
-          e.stopPropagation();
-          return this.go(this.getUp(this.focussed));
+          return handleNavigationTo(this.getUp(this.focussed));
         case 39:
-          e.preventDefault();
-          e.stopPropagation();
-          return this.go(this.getRight(this.focussed));
+          return handleNavigationTo(this.getRight(this.focussed));
         case 40:
-          e.preventDefault();
-          e.stopPropagation();
-          return this.go(this.getDown(this.focussed));
+          return handleNavigationTo(this.getDown(this.focussed));
 
         default:
           return true;
       }
-    };
+    }.bind(this);
 
-    el.addEventListener('keydown', onkeydown.bind(this), false);
+    el.addEventListener('keydown', onkeydown, false);
   };
 
   KeyNavigator.prototype = {
