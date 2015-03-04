@@ -14,6 +14,49 @@
     dd.innerHTML = '';
   }
 
+  function Badge(text, opts) {
+    this.x = window.document.createElement('span');
+    _.merge(this.x, opts.x.attrs);
+    _.merge(this.x.style, opts.x.style);
+
+    this.label = window.document.createElement('span');
+    _.merge(this.label, opts.label.attrs);
+    _.merge(this.label.style, opts.label.style);
+    this.label.textContent = text;
+
+    this.el = window.document.createElement('div');
+    _.merge(this.el, opts.attrs);
+    _.merge(this.el.style, opts.style);
+    this.el.appendChild(this.x);
+    this.el.appendChild(this.label);
+  }
+
+  function dropdownItemClicker(input, dropdown, result, opts) {
+    return function() {
+      var badgeRect,
+          inputPaddingLeft;
+      var badge = new Badge(this.textContent, opts.badge);
+
+      badge.x.addEventListener('click', function() {
+        var inputPaddingLeft, newPaddingLeft;
+        var badgeRect = badge.el.getBoundingClientRect();
+        result.object.selected = false;
+        badge.el.parentNode.removeChild(badge.el);
+        inputPaddingLeft = parseFloat(input.style.paddingLeft, 10);
+        newPaddingLeft = inputPaddingLeft - (badgeRect.right - badgeRect.left);
+        input.style.paddingLeft = newPaddingLeft;
+      }, false);
+
+      result.object.selected = true;
+      input.value = '';
+      input.parentNode.appendChild(badge.el);
+      badgeRect = badge.el.getBoundingClientRect();
+      inputPaddingLeft = parseFloat(input.style.paddingLeft, 10) || 0;
+      input.style.paddingLeft = inputPaddingLeft + badgeRect.right - badgeRect.left;
+      clearDropdown(dropdown);
+    };
+  }
+
   function updateDropdown(dropdown, input, options, searchString, opts) {
     var search_results;
     clearDropdown(dropdown);
@@ -42,11 +85,9 @@
       li.innerHTML = _.highlightString(result.result, result.index,
                                        result.index + searchString.length,
                                        opts.highlight);
-      li.addEventListener('click', function() {
-        result.object.selected = true;
-        input.value = this.textContent;
-        clearDropdown(dropdown);
-      }, false);
+      li.addEventListener('click',
+                          dropdownItemClicker(input, dropdown, result, opts),
+                          false);
 
       dropdown.appendChild(li);
     });
@@ -93,7 +134,7 @@
    *
    */
   window.deselect = function(selectID, userOpts) {
-    var opts, select, input, dropdown, dropdownContainer,
+    var opts, select, input, inputContainer, dropdown, dropdownContainer,
         container, keynav, lastMoveWasUp, current_click;
     /* Default options */
     opts = {
@@ -106,6 +147,11 @@
         attrs: {
           type: 'text',
           className: 'deselect--search-box'
+        }
+      },
+      inputContainer: {
+        attrs: {
+          className: 'deselect--input-container'
         }
       },
       dropdown: {
@@ -133,6 +179,35 @@
       },
       focus: {
         class: 'deselect--focus'
+      },
+      badge: {
+        attrs: {
+          className: 'deselect--badge',
+        },
+        style: {
+          position: 'absolute',
+          height: '50%',
+          top: '25%',
+          paddingLeft: '0.5em',
+          paddingRight: '0.5em'
+        },
+        x: {
+          attrs: {
+            className: 'deselect--badge-x',
+            innerHTML: '&times;'
+          },
+          style: {
+            cursor: 'pointer',
+            marginRight: '10px'
+          }
+        },
+        label: {
+          attrs: {
+            className: 'deselect--badge-label'
+          },
+          style: {
+          }
+        }
       }
     };
     /* Optionally update defaults with user-given options. */
@@ -147,6 +222,11 @@
     input.required = select.required;
     _.merge(input, opts.input.attrs);
     input.style.width = '100%';
+
+    inputContainer = window.document.createElement('div');
+    _.merge(inputContainer, opts.inputContainer.attrs);
+
+    inputContainer.style.position = 'relative';
 
     /* Create the <ul> that will represent the list of <option>s that match the
      * user's query.
@@ -177,15 +257,16 @@
     _.merge(container, opts.container.attrs);
 
     /* Stack the dolls. */
-    container.appendChild(input);
+    inputContainer.appendChild(input);
     dropdownContainer.appendChild(dropdown);
+    container.appendChild(inputContainer);
     container.appendChild(dropdownContainer);
 
     /* Hide the <select>. */
-    select.style.display = 'none';
+    //select.style.display = 'none';
 
-    /* Put the whole thing directly after the <select> (before its next sibling) */
-    select.parentNode.insertBefore(container, select.nextSibling);
+    /* Put the whole thing directly after the <select>. */
+    _.insertAfter(select, container);
 
     lastMoveWasUp = false;
     keynav = new _.KeyNavigator(container, input, {
@@ -261,6 +342,7 @@
       if (!clicked_dropdown)
         clearDropdown(dropdown);
       keynav.unfocus(keynav.focussed);
+      input.value = '';
     }, false);
   };
 }());
@@ -400,6 +482,13 @@ module.exports = (function() {
     el.className = newClasses.join(' ');
   }
 
+  /* Insert the element `after` directly after the element `el` (before its next
+   * sibling).
+   */
+  function insertAfter(el, after) {
+    el.parentNode.insertBefore(after, el.nextSibling);
+  }
+
   function searchList(start, next, shouldStop, isMatch) {
     var current = start;
     while (!shouldStop(current)) {
@@ -519,6 +608,7 @@ module.exports = (function() {
     highlightString: highlightString,
     addClass: addClass,
     removeClass: removeClass,
+    insertAfter: insertAfter,
     maybeScrollIntoView: maybeScrollIntoView,
     previousElementSibling: previousElementSibling,
     nextElementSibling: nextElementSibling,

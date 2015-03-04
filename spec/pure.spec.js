@@ -142,7 +142,7 @@ describe('always', function() {
     expect(a).toEqual(jasmine.any(Function));
   });
 
-  it('should return `undefined` when called without arguments', function() {
+  it('should return `always(undefined)` when called without arguments', function() {
     expect(_.always()()).toBeUndefined();
   });
 
