@@ -29,5 +29,5 @@ version of deselect.js. Either can be included as-is in your HTML to use the
 `deselect.js` library.
 
 ## TODO
-See [deselect.js/TODO](https://github.com/deselect.js/jsenn/blob/master/TODO)
+See [deselect.js/TODO](https://github.com/jsenn/deselect.js/blob/master/TODO.md)
 
