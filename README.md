@@ -28,3 +28,6 @@ file, and deselect.min.js, which is a
 version of deselect.js. Either can be included as-is in your HTML to use the
 `deselect.js` library.
 
+## TODO
+See [deselect.js/TODO](https://github.com/jsenn/blob/master/TODO)
+
