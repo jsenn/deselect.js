@@ -131,6 +131,13 @@ module.exports = (function() {
     el.className = newClasses.join(' ');
   }
 
+  /* Insert the element `after` directly after the element `el` (before its next
+   * sibling).
+   */
+  function insertAfter(el, after) {
+    el.parentNode.insertBefore(after, el.nextSibling);
+  }
+
   function searchList(start, next, shouldStop, isMatch) {
     var current = start;
     while (!shouldStop(current)) {
@@ -250,6 +257,7 @@ module.exports = (function() {
     highlightString: highlightString,
     addClass: addClass,
     removeClass: removeClass,
+    insertAfter: insertAfter,
     maybeScrollIntoView: maybeScrollIntoView,
     previousElementSibling: previousElementSibling,
     nextElementSibling: nextElementSibling,
