@@ -146,9 +146,7 @@ window.deselect = function(select, userOpts) {
       var badgeRect, paddingLeft;
 
       var badge = optionToBadge(o);
-      var center = window.document.createElement('div');
-      center.appendChild(badge);
-      badgeContainer.appendChild(center);
+      badgeContainer.appendChild(badge);
 
       /* Shove the input over to make room for the new badge. */
       badgeRect = badge.getBoundingClientRect();
@@ -365,12 +363,17 @@ module.exports = (function() {
           className: classPrefix + 'badge-container'
         },
         style: {
-          /* We want to display the badges right over the <input>. */
+          /* Center the badge vertically. See
+           * http://www.smashingmagazine.com/2013/08/09/absolute-horizontal-vertical-centering-css/
+           */
+          display: 'table',
+          height: 'auto',
+          margin: 'auto',
           position: 'absolute',
-
-          /* Try to center it vertically. */
-          height: '50%',
-          top: '25%'
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0
         }
       },
 

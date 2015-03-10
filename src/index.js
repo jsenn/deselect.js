@@ -140,9 +140,7 @@ window.deselect = function(select, userOpts) {
       var badgeRect, paddingLeft;
 
       var badge = optionToBadge(o);
-      var center = window.document.createElement('div');
-      center.appendChild(badge);
-      badgeContainer.appendChild(center);
+      badgeContainer.appendChild(badge);
 
       /* Shove the input over to make room for the new badge. */
       badgeRect = badge.getBoundingClientRect();
