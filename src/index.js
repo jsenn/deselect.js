@@ -11,6 +11,9 @@ window.deselect = function(select, userOpts) {
   if (userOpts !== void 0)
     _.merge(opts, userOpts);
 
+  /* Hide the <select> element. */
+  select.style.display = 'none';
+
   container = window.document.createElement('div');
   _.merge(container, opts.container.attrs);
   _.merge(container.style, opts.container.style);
@@ -159,6 +162,7 @@ window.deselect = function(select, userOpts) {
      */
     var i_next = (currentPosition + steps.length + direction) % steps.length;
     state.focussed = steps[i_next];
+    state.query = state.focussed.textContent;
     render();
   }
 
