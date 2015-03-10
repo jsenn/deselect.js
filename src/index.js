@@ -162,7 +162,6 @@ window.deselect = function(select, userOpts) {
      */
     var i_next = (currentPosition + steps.length + direction) % steps.length;
     state.focussed = steps[i_next];
-    state.query = state.focussed.textContent;
     render();
   }
 
@@ -189,7 +188,22 @@ window.deselect = function(select, userOpts) {
   }
 
   function filterOptions() {
-    var searchResults = _.search(state.query, select.children);
+    var searchResults;
+
+    if (state.query.length >= 1)
+      searchResults = _.search(state.query, select.children);
+    else
+      /* We'll display the options in the order in which they appear in the
+       * <select>.
+       */
+      searchResults = _.map(function(o) {
+        return {
+          object: o,
+          result: o.textContent,
+          index: 0
+        };
+      }, select.children);
+
     state.results = _.filter(function(r) {
       return state.selected.indexOf(r.object) === -1;
     }, searchResults);
@@ -227,7 +241,9 @@ window.deselect = function(select, userOpts) {
 
   input.addEventListener('keyup', ignoreIfMeta(navigate), false);
   input.addEventListener('keyup', _.keypresser(ignoreIfMeta(function(e) {
-    if (opts.keys.up.indexOf(e.keyCode)      === -1 &&
+    if (e.keyCode !== 37 && /* left arrow key */
+        e.keycode !== 39 && /* right arrow key */
+        opts.keys.up.indexOf(e.keyCode)      === -1 &&
         opts.keys.select.indexOf(e.keyCode)  === -1 &&
         (opts.keys.down.indexOf(e.keyCode)   === -1 ||
          dropdown.style.display === 'none'))
