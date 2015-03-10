@@ -25,8 +25,7 @@ directory. If the tests pass, you can run `grunt build`. This will place two
 files in the `dist/` directory: deselect.js, which is a stand-alone JavaScript
 file, and deselect.min.js, which is a
 [minified](https://en.wikipedia.org/wiki/Minification_(programming)#Web_development)
-version of deselect.js. Either can be included as-is in your HTML to use the
-`deselect.js` library.
+version of deselect.js. Either can be included as-is in your HTML to use `deselect.js`.
 
 ## TODO
 See [deselect.js/TODO](https://github.com/jsenn/deselect.js/blob/master/TODO.md)
