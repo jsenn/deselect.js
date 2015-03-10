@@ -4,351 +4,400 @@
  */
 
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-(function () {
+window.deselect = function(select, userOpts) {
   'use strict';
+  var _, opts, container, input, inputContainer, dropdown, dropdownContainer,
+      badgeContainer, state, clickingDropdown, clickingBadge;
 
-  var _ = require('./util');
+  _ = require('./util');
 
-  function clearDropdown(dd) {
-    dd.style.display = 'none';
-    dd.innerHTML = '';
+  opts = require('./opts'); /* default options */
+
+  /* Optionally update defaults with user-given options. */
+  if (userOpts !== void 0)
+    _.merge(opts, userOpts);
+
+  container = window.document.createElement('div');
+  _.merge(container, opts.container.attrs);
+  _.merge(container.style, opts.container.style);
+
+  input = window.document.createElement('input');
+  _.merge(input, opts.input.attrs);
+  _.merge(input.style, opts.input.style);
+
+  inputContainer = window.document.createElement('div');
+  _.merge(inputContainer, opts.input.container.attrs);
+  _.merge(inputContainer.style, opts.input.container.style);
+  inputContainer.appendChild(input);
+
+  badgeContainer = window.document.createElement('div');
+  _.merge(badgeContainer, opts.badge.container.attrs);
+  _.merge(badgeContainer.style, opts.badge.container.style);
+  inputContainer.appendChild(badgeContainer);
+
+  container.appendChild(inputContainer);
+
+  dropdown = window.document.createElement('ul');
+  _.merge(dropdown, opts.dropdown.attrs);
+  _.merge(dropdown.style, opts.dropdown.style);
+  dropdown.style.display = 'none';
+
+  dropdownContainer = window.document.createElement('div');
+  _.merge(dropdownContainer, opts.dropdown.container.attrs);
+  _.merge(dropdownContainer.style, opts.dropdown.container.style);
+  dropdownContainer.appendChild(dropdown);
+
+  container.appendChild(dropdownContainer);
+
+  _.insertAfter(select, container);
+
+  state = {
+    query: '',
+    results: [],
+    selected: [],
+    focussed: null,
+    lastMoveWasUp: false,
+    scrollTop: 0
+  };
+
+  function clearAllButSelected() {
+    state.query = '';
+    state.results = [];
+    state.focussed = null;
+    render();
   }
 
-  function Badge(text, opts) {
-    this.x = window.document.createElement('span');
-    _.merge(this.x, opts.x.attrs);
-    _.merge(this.x.style, opts.x.style);
-
-    this.label = window.document.createElement('span');
-    _.merge(this.label, opts.label.attrs);
-    _.merge(this.label.style, opts.label.style);
-    this.label.textContent = text;
-
-    this.el = window.document.createElement('div');
-    _.merge(this.el, opts.attrs);
-    _.merge(this.el.style, opts.style);
-    this.el.appendChild(this.x);
-    this.el.appendChild(this.label);
+  function selectOption(o) {
+    if (select.multiple)
+      state.selected.push(o);
+    else
+      state.selected = [o];
+    clearAllButSelected();
   }
 
-  function dropdownItemClicker(input, dropdown, result, opts) {
-    return function() {
-      var badgeRect,
-          inputPaddingLeft;
-      var badge = new Badge(this.textContent, opts.badge);
-
-      badge.x.addEventListener('click', function() {
-        var inputPaddingLeft, newPaddingLeft;
-        var badgeRect = badge.el.getBoundingClientRect();
-        result.object.selected = false;
-        badge.el.parentNode.removeChild(badge.el);
-        inputPaddingLeft = parseFloat(input.style.paddingLeft, 10);
-        newPaddingLeft = inputPaddingLeft - (badgeRect.right - badgeRect.left);
-        input.style.paddingLeft = newPaddingLeft;
-      }, false);
-
-      result.object.selected = true;
-      input.value = '';
-      input.parentNode.appendChild(badge.el);
-      badgeRect = badge.el.getBoundingClientRect();
-      inputPaddingLeft = parseFloat(input.style.paddingLeft, 10) || 0;
-      input.style.paddingLeft = inputPaddingLeft + badgeRect.right - badgeRect.left;
-      clearDropdown(dropdown);
-    };
+  function resultToLi(result) {
+    var hl = _.highlightString(result.result, result.index,
+                               result.index + state.query.length,
+                               opts.highlight);
+    var li = window.document.createElement('li');
+    _.merge(li, opts.dropdown.item.attrs);
+    _.merge(li.style, opts.dropdown.item.style);
+    li.innerHTML = hl || result.object.textContent;
+    li.addEventListener('click', function() { selectOption(result.object); }, false);
+    return li;
   }
 
-  function updateDropdown(dropdown, input, options, searchString, opts) {
-    var search_results;
-    clearDropdown(dropdown);
+  function optionToBadge(optionElement) {
+    var badge = window.document.createElement('div');
+    var x = window.document.createElement('span');
+    var label = window.document.createElement('span');
 
-    if (searchString) {
-      search_results = _.search(searchString, options);
-    } else {
-      /* Display all options in the order in which they're given. */
-      search_results = _.map(function(o) {
-        return {
-          object: o,
-          result: o.textContent,
-          index: 0
-        };
-      }, options);
+    _.merge(badge, opts.badge.attrs);
+    _.merge(badge.style, opts.badge.style);
+
+    _.merge(x, opts.badge.x.attrs);
+    _.merge(x.style, opts.badge.x.style);
+
+    x.addEventListener('click', function() {
+      state.selected = _.filter(_.neq(optionElement), state.selected);
+      clearAllButSelected();
+    }, false);
+
+    _.merge(label, opts.badge.label.attrs);
+    _.merge(label.style, opts.badge.label.style);
+    label.textContent = optionElement.textContent;
+
+    badge.appendChild(x);
+    badge.appendChild(label);
+
+    return badge;
+  }
+
+  function render() {
+    var focussedLi;
+    input.value = state.query;
+
+    dropdown.innerHTML = '';
+    badgeContainer.innerHTML = '';
+
+    _.forEach(state.results, function(result) {
+      var li = resultToLi(result);
+      dropdown.appendChild(li);
+      if (result.object === state.focussed)
+        focussedLi = li;
+    });
+
+    dropdown.scrollTop = state.scrollTop;
+    if (focussedLi !== void 0 && focussedLi !== null) {
+      _.addClass(opts.focusClass, focussedLi);
+      _.maybeScrollIntoView(focussedLi, dropdown, state.lastMoveWasUp);
+      state.scrollTop = dropdown.scrollTop;
     }
 
-    if (search_results.length === 0)
-      return; /* Don't bother displaying the dropdown. */
+    dropdown.style.display = dropdown.children.length >= 1 ? 'block' : 'none';
 
-    /* Display the results */
-    _.forEach(search_results, function (result) {
-      var li = window.document.createElement('li');
-      li.className = opts.dropdownItem.class;
-
-      li.innerHTML = _.highlightString(result.result, result.index,
-                                       result.index + searchString.length,
-                                       opts.highlight);
-      li.addEventListener('click',
-                          dropdownItemClicker(input, dropdown, result, opts),
-                          false);
-
-      dropdown.appendChild(li);
+    _.forEach(select.children, function(o) {
+      o.selected = state.selected.indexOf(o) !== -1;
     });
 
-    dropdown.style.display = 'block';
+    /* For every selected <option>, add a removable "badge" over the <input>. */
+    input.style.paddingLeft = 0;
+    _.forEach(state.selected, function(o) {
+      var badgeRect, paddingLeft;
+
+      var badge = optionToBadge(o);
+      var center = window.document.createElement('div');
+      center.appendChild(badge);
+      badgeContainer.appendChild(center);
+
+      /* Shove the input over to make room for the new badge. */
+      badgeRect = badge.getBoundingClientRect();
+      paddingLeft = parseFloat(input.style.paddingLeft);
+      input.style.paddingLeft = paddingLeft + badgeRect.right - badgeRect.left;
+    });
   }
 
-  /* Return a callback that will call the given function `f` after the
-   * callback hasn't been called in the given number of milliseconds. This can
-   * be used as a keypress event callback to avoid calling the function `f` too
-   * many times. (i.e. If the user types fast, there's probably no value in
-   * calling `f` on every key stroke.)
-   */
-  function keypresser(f, ms) {
-    var timeoutID;
+  function step(direction) {
+    var resultObjects = _.map(_.get('object'), state.results);
+    var steps = [input].concat(resultObjects);
+    var currentPosition = steps.indexOf(state.focussed);
+    /* Choose the next index according to the direction, wrapping around if
+     * necessary. The extra `steps.length` is there to handle negative
+     * directions (e.g. if `currentPosition` is 0 and `direction` is -1).
+     */
+    var i_next = (currentPosition + steps.length + direction) % steps.length;
+    state.focussed = steps[i_next];
+    render();
+  }
+
+  function navigate(e) {
+    if (e.shiftKey)
+      return true;
+
+    if (opts.keys.select.indexOf(e.keyCode) !== -1) {
+      e.stopPropagation();
+      selectOption(state.focussed);
+    } else if (opts.keys.down.indexOf(e.keyCode) !== -1) {
+      e.preventDefault();
+      e.stopPropagation();
+      state.lastMoveWasUp = false;
+      step(1);
+    } else if (opts.keys.up.indexOf(e.keyCode) !== -1) {
+      e.preventDefault();
+      e.stopPropagation();
+      state.lastMoveWasUp = true;
+      step(-1);
+    } else {
+      return true;
+    }
+  }
+
+  function filterOptions() {
+    var searchResults = _.search(state.query, select.children);
+    state.results = _.filter(function(r) {
+      return state.selected.indexOf(r.object) === -1;
+    }, searchResults);
+  }
+
+  function renderFromInput() {
+    state.query = input.value;
+    state.focussed = input;
+    filterOptions();
+    render();
+  }
+
+  function ignoreIfMeta(f) {
     return function(e) {
-      /* If there's an active timer, nuke it. */
-      if (timeoutID === void 0)
-        window.clearTimeout(timeoutID);
-      /* [re]start the timer. */
-      timeoutID = window.setTimeout(function() { return f(e); }, ms);
+      return (e.ctrlKey || e.altKey) ? true : f(e);
     };
   }
 
-  /* Main entry point. Hide the <select> with the given ID and replace it with
-   * an <input> that can be used to filter down <option>s, which are displayed
-   * in a dropdown below. For <select multiple>s, there's an option to add
-   * more of these.
-   *
-   * +-------------------------+
-   * | second                x |
-   * +-------------------------+
-   *
-   * +-------------------------+ +---+
-   * | ir                      | | + |
-   * +-------------------------+ +---+
-   * | first                +-+|
-   * |  --                  |@||
-   * | third                |@||
-   * |   --                 | ||
-   * | twenty-third         | ||
-   * |          --          +-+|
-   * +-------------------------+
-   *
-   */
-  window.deselect = function(selectID, userOpts) {
-    var opts, select, input, inputContainer, dropdown, dropdownContainer,
-        container, keynav, lastMoveWasUp, current_click;
-    /* Default options */
-    opts = {
+  window.document.addEventListener('mousedown', function(e) {
+    if (_.hasAncestor(dropdown, e.target))
+      clickingDropdown = true;
+    if (_.hasAncestor(badgeContainer, e.target))
+      clickingBadge = true;
+  }, false);
+  window.document.addEventListener('mouseup', function() {
+    clickingDropdown = false;
+    clickingBadge = false;
+  }, false);
+
+  input.addEventListener('focus', renderFromInput, false);
+  input.addEventListener('blur', function() {
+    if (!clickingDropdown && !clickingBadge)
+      clearAllButSelected();
+  }, false);
+
+  input.addEventListener('keyup', ignoreIfMeta(navigate), false);
+  input.addEventListener('keyup', _.keypresser(ignoreIfMeta(function(e) {
+    if (opts.keys.up.indexOf(e.keyCode)      === -1 &&
+        opts.keys.select.indexOf(e.keyCode)  === -1 &&
+        (opts.keys.down.indexOf(e.keyCode)   === -1 ||
+         dropdown.style.display === 'none'))
+      renderFromInput();
+  })), false);
+};
+
+
+},{"./opts":2,"./util":3}],2:[function(require,module,exports){
+module.exports = (function() {
+  var classPrefix = 'deselect--';
+
+  return {
+    /* The `Event.keyCode`s that we will use to add keyboard controls. */
+    keys: {
+      up: [38], /* move up */
+      down: [40], /* move down */
+      select: [13, 32] /* choose an option */
+    },
+
+    /* The class that will be added to focussed elements. */
+    focusClass: classPrefix + 'focus',
+
+    /* The <div> into which the whole widget will go. */
+    container: {
+      attrs: {
+        className: classPrefix + 'wrapper'
+      },
+      style: {}
+    },
+
+    /* The "search box" users can use to filter options. */
+    input: {
+      attrs: {
+        type: 'text', /* <input type="text"> */
+        className: classPrefix + 'search-box'
+      },
+      style: {
+        width: '100%'
+      },
       container: {
         attrs: {
-          className: 'deselect--wrapper'
-        }
-      },
-      input: {
-        attrs: {
-          type: 'text',
-          className: 'deselect--search-box'
-        }
-      },
-      inputContainer: {
-        attrs: {
-          className: 'deselect--input-container'
-        }
-      },
-      dropdown: {
-        attrs: {
-          className: 'deselect--dropdown',
+          className: classPrefix + 'input-container'
         },
         style: {
-          maxHeight: '10em',
-          overflowX: 'hidden',
-          overflowY: 'scroll',
-          zIndex: 100,
-          marginTop: 0
+          position: 'relative'
         }
+      }
+    },
+
+    /* The <ul> that will contain the options the user can select. */
+    dropdown: {
+      attrs: {
+        className: classPrefix + 'dropdown',
       },
-      dropdownContainer: {
+      style: {
+        width: '100%',
+
+        /* Limit the amount of options that can be displayed. Especially useful
+         * if there are 100s or 1000s of <option>s.
+         */
+        maxHeight: '10em',
+
+        /* We don't need any bullet points, special list padding, etc. */
+        listStyle: 'none',
+        padding: 0,
+
+        /* A convenient default to make the thing look OK out of the box. */
+        borderWidth: 1,
+        borderStyle: 'solid',
+
+        /* The background needs to be opaque so the elements below don't show. */
+        backgroundColor: 'white',
+
+        /* Allow the user to scroll up and down through the options. */
+        overflowX: 'hidden',
+        overflowY: 'scroll',
+
+        /* Make sure the dropdown renders over top of everything else. */
+        zIndex: 100,
+
+        /* Render the dropdown directly below the <input>. */
+        marginTop: 0,
+
+        /* Make sure the dropdown doesn't drop everything else down with it! */
+        position: 'absolute'
+      },
+      container: {
         attrs: {
-          className: 'deselect--dropdown-container'
-        }
-      },
-      dropdownItem: {
-        class: 'deselect--dropdown-item',
-      },
-      highlight: {
-        class: 'deselect--highlight'
-      },
-      focus: {
-        class: 'deselect--focus'
-      },
-      badge: {
-        attrs: {
-          className: 'deselect--badge',
+          className: classPrefix + 'dropdown-container'
         },
         style: {
+          /* Since the actual dropdown's `absolute`ly `position`ed, we need to
+           * position its container relative to the rest of the page.
+           */
+          position: 'relative'
+        }
+      },
+
+      /* The <li> that will contain an individual option. */
+      item: {
+        attrs: {
+          className: classPrefix + 'dropdown-item'
+        },
+        style: {}
+      }
+    },
+
+    /* The <span> that wraps highlighted results. */
+    highlight: {
+      attrs: {
+        className: classPrefix + 'highlight'
+      },
+      style: {}
+    },
+
+    /* The little things displayed over the <input> that show which options the
+     * user has selected.
+     */
+    badge: {
+      attrs: {
+        className: classPrefix + 'badge',
+      },
+      style: {
+        float: 'left',
+        paddingLeft: '0.5em',
+        paddingRight: '0.5em'
+      },
+      container: {
+        attrs: {
+          className: classPrefix + 'badge-container'
+        },
+        style: {
+          /* We want to display the badges right over the <input>. */
           position: 'absolute',
+
+          /* Try to center it vertically. */
           height: '50%',
-          top: '25%',
-          paddingLeft: '0.5em',
-          paddingRight: '0.5em'
+          top: '25%'
+        }
+      },
+
+      /* The 'exit button' for the badge. */
+      x: {
+        attrs: {
+          className: classPrefix + 'badge-x',
+          innerHTML: '&times;' /* × */
         },
-        x: {
-          attrs: {
-            className: 'deselect--badge-x',
-            innerHTML: '&times;'
-          },
-          style: {
-            cursor: 'pointer',
-            marginRight: '10px'
-          }
+        style: {
+          cursor: 'pointer',
+          /* Separate it from the label (which is to the right). */
+          marginRight: '10px'
+        }
+      },
+      label: {
+        attrs: {
+          className: classPrefix + 'badge-label'
         },
-        label: {
-          attrs: {
-            className: 'deselect--badge-label'
-          },
-          style: {
-          }
-        }
+        style: {}
       }
-    };
-    /* Optionally update defaults with user-given options. */
-    if (userOpts !== void 0)
-      _.merge(opts, userOpts);
-
-    select = window.document.getElementById(selectID);
-
-    /* Create the <input> into which the user can enter their searches. */
-    input = window.document.createElement('input');
-    input.disabled = select.disabled;
-    input.required = select.required;
-    _.merge(input, opts.input.attrs);
-    input.style.width = '100%';
-
-    inputContainer = window.document.createElement('div');
-    _.merge(inputContainer, opts.inputContainer.attrs);
-
-    inputContainer.style.position = 'relative';
-
-    /* Create the <ul> that will represent the list of <option>s that match the
-     * user's query.
-     */
-    dropdown = window.document.createElement('ul');
-    _.merge(dropdown, opts.dropdown.attrs);
-    _.merge(dropdown.style, opts.dropdown.style);
-    dropdown.style.width = '100%';
-
-    /* Override default list styling. */
-    dropdown.style.listStyle = 'none';
-    dropdown.style.padding = 0;
-
-    /* Make sure it doesn't drop everything else down with it! */
-    dropdown.style.position = 'absolute';
-
-    /* Don't display it until we're told to. */
-    dropdown.style.display = 'none';
-
-    dropdownContainer = window.document.createElement('div');
-    _.merge(dropdownContainer, opts.dropdownContainer.attrs);
-
-    dropdownContainer.style.width = '100%';
-    dropdownContainer.style.position = 'relative';
-
-    /* Create the <div> in which the entire widget will reside. */
-    container = window.document.createElement('div');
-    _.merge(container, opts.container.attrs);
-
-    /* Stack the dolls. */
-    inputContainer.appendChild(input);
-    dropdownContainer.appendChild(dropdown);
-    container.appendChild(inputContainer);
-    container.appendChild(dropdownContainer);
-
-    /* Hide the <select>. */
-    //select.style.display = 'none';
-
-    /* Put the whole thing directly after the <select>. */
-    _.insertAfter(select, container);
-
-    lastMoveWasUp = false;
-    keynav = new _.KeyNavigator(container, input, {
-      getDown: function(node) {
-        lastMoveWasUp = false;
-        switch (node) {
-          case input:
-            return _.firstElementChild(dropdown);
-          case _.lastElementChild(dropdown):
-            return input; /* wrap around */
-          default:
-            return _.nextElementSibling(node);
-        }
-      },
-      getUp: function(node) {
-        lastMoveWasUp = true;
-        switch (node) {
-          case input:
-            return _.lastElementChild(dropdown); /* wrap around */
-          case _.firstElementChild(dropdown):
-            return input;
-          default:
-            return _.previousElementSibling(node);
-        }
-      },
-      focus: function(node) {
-        _.addClass(opts.focus.class, node);
-        _.maybeScrollIntoView(node, dropdown, lastMoveWasUp);
-      },
-      unfocus: function(node) {
-        if (node === void 0) {
-          keynav.focussed = null;
-        } else {
-          _.removeClass(opts.focus.class, node);
-        }
-      },
-      select: function(node) {
-        node.click();
-      }
-    });
-
-    /* When the user's done typing, show them which options match their query. */
-    input.addEventListener('keyup', keypresser(function(e) {
-      if (e.keyCode !== 13 && /* enter */
-          e.keyCode !== 32 && /* space */
-          !(37 <= e.keyCode && 40 >= e.keyCode)) { /* arrow keys */
-        updateDropdown(dropdown, input, select.children, input.value, opts);
-        keynav.go(input);
-      }
-    }, 100), false);
-
-    /* Always show the user their options when the <input> is focussed. */
-    input.addEventListener('focus', function() {
-      updateDropdown(dropdown, input, select.children, input.value, opts);
-      keynav.go(input);
-    }, false);
-
-    /* Keep track of the currently clicked element so we can hide the dropdown. */
-    current_click = null;
-    window.document.addEventListener('mousedown', function(e) {
-      current_click = e.target;
-    }, false);
-    window.document.addEventListener('mouseup', function() {
-      current_click = null;
-    }, false);
-
-    /* If the <input> loses focus, hide the dropdown unless it's being clicked.
-     * (If it is, we might need to do stuff with it first.)
-     */
-    input.addEventListener('blur', function() {
-      var clicked_dropdown = current_click !== null &&
-                             _.hasAncestor(dropdown, current_click);
-      if (!clicked_dropdown)
-        clearDropdown(dropdown);
-      keynav.unfocus(keynav.focussed);
-      input.value = '';
-    }, false);
+    }
   };
 }());
 
 
-},{"./util":2}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 module.exports = (function() {
   'use strict';
 
@@ -373,14 +422,6 @@ module.exports = (function() {
         xs_p.push(x);
     });
     return xs_p;
-  }
-
-  function some(p, xs) {
-    for (var i = 0; i < xs.length; i++) {
-      if (p(xs[i]))
-        return true;
-    }
-    return false;
   }
 
   /* See http://stackoverflow.com/a/6000016 */
@@ -450,7 +491,8 @@ module.exports = (function() {
     if (start === end) /* Nothing to highlight! */
       return s;
     var span = window.document.createElement('span');
-    span.className = opts.class;
+    merge(span, opts.attrs);
+    merge(span.style, opts.style);
     span.textContent = s.substring(start, end);
     return s.substring(0, start) + span.outerHTML + s.substring(end);
   }
@@ -471,14 +513,14 @@ module.exports = (function() {
 
   function addClass(className, el) {
     var classes = el.className.split(/\s+/);
-    if (!some(function(s) { return s === className; }, classes))
+    if (classes.indexOf(className) === -1)
       classes.push(className);
     el.className = classes.join(' ');
   }
 
   function removeClass(className, el) {
     var classes = el.className.split(/\s+/);
-    var newClasses = filter(function(s) { return s !== className; }, classes);
+    var newClasses = filter(neq(className), classes);
     el.className = newClasses.join(' ');
   }
 
@@ -506,101 +548,37 @@ module.exports = (function() {
                       function(node) { return node === ancestor; });
   }
 
-  function searchForElement(start, next) {
-    return searchList(start, next, function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+  function neq(val) {
+    return function(x) { return x !== val; };
   }
 
-  function previousElementSibling(el) {
-    return searchForElement(el.previousSibling,
-                            function(node) { return node.previousSibling; });
-  }
-
-  function nextElementSibling(el) {
-    return searchForElement(el.nextSibling,
-                            function(node) { return node.nextSibling; });
-  }
-
-  function firstElementChild(el) {
-    return searchForElement(el.firstChild,
-                            function(node) { return node.nextSibling; });
-  }
-
-  function lastElementChild(el) {
-    return searchForElement(el.lastChild,
-                            function(node) { return node.previousSibling; });
-  }
-
-  function always(val) {
-    return function() { return val; };
-  }
-
-  var KeyNavigator = function(el, initial, methods) {
-    this.focussed = initial;
-
-    merge(this, methods); /* See KeyNavigator.prototype */
-
-    this.go = function(node) {
-      if (node !== null) {
-        this.unfocus(this.focussed);
-        this.focus(node);
-        this.focussed = node;
-      }
+  function get(attrName) {
+    return function(object) {
+      return object[attrName];
     };
+  }
 
-    /* Must be bound to this object. */
-    var onkeydown = function(e) {
-      var handleNavigationTo = function(node) {
-        if (node !== null) {
-          e.preventDefault();
-          e.stopPropagation();
-          return this.go(node);
-        }
-      }.bind(this);
-
-      if (e.altKey || e.ctrlKey || e.shiftKey)
-        /* Ignore the event. */
-        return true;
-
-      switch (e.keyCode) {
-        case 13: /* space */
-        case 32: /* enter */
-          e.stopPropagation();
-          return this.select(this.focussed);
-
-        case 37: /* left arrow key */
-          return handleNavigationTo(this.getLeft(this.focussed));
-        case 38: /* up arrow key */
-          return handleNavigationTo(this.getUp(this.focussed));
-        case 39: /* right arrow key */
-          return handleNavigationTo(this.getRight(this.focussed));
-        case 40: /* down arrow key */
-          return handleNavigationTo(this.getDown(this.focussed));
-
-        default:
-          /* Ignore the event. */
-          return true;
-      }
-    }.bind(this);
-
-    el.addEventListener('keydown', onkeydown, false);
-  };
-
-  KeyNavigator.prototype = {
-    getUp:    always(null),
-    getDown:  always(null),
-    getLeft:  always(null),
-    getRight: always(null),
-    focus:    always(void 0),
-    unfocus:  always(void 0),
-    select:   always(void 0)
-  };
+  /* Return a callback that will call the given (unary) function `f` after the
+   * callback hasn't been called in the given number of milliseconds. This can
+   * be used as a keypress event callback to avoid calling the function `f` too
+   * many times. (i.e. If the user types fast, there's probably no value in
+   * calling `f` on every key stroke.)
+   */
+  function keypresser(f, ms) {
+    var timeoutID;
+    return function(e) {
+      /* If there's an active timer, nuke it. */
+      if (timeoutID === void 0)
+        window.clearTimeout(timeoutID);
+      /* [re]start the timer. */
+      timeoutID = window.setTimeout(function() { return f(e); }, ms);
+    };
+  }
 
   return {
     forEach: forEach,
     map: map,
     filter: filter,
-    some: some,
     isFunction: isFunction,
     merge: merge,
     hasAncestor: hasAncestor,
@@ -610,15 +588,12 @@ module.exports = (function() {
     removeClass: removeClass,
     insertAfter: insertAfter,
     maybeScrollIntoView: maybeScrollIntoView,
-    previousElementSibling: previousElementSibling,
-    nextElementSibling: nextElementSibling,
-    firstElementChild: firstElementChild,
-    lastElementChild: lastElementChild,
-    always: always,
-    KeyNavigator: KeyNavigator
+    get: get,
+    neq: neq,
+    keypresser: keypresser,
   };
 
 }());
 
 
-},{}]},{},[1,2]);
+},{}]},{},[1,2,3]);

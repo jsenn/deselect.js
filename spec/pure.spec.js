@@ -97,66 +97,9 @@ describe('filter', function() {
   });
 });
 
-describe('some', function() {
-  beforeAll(function() {
-    this.empty = [];
-    this.singleton = [1];
-    this.a = [1, 2, 3, 4, 5];
-    this.oddP = function(n) { return n % 2 === 1; };
-  });
-
-  beforeEach(function() {
-    spyOn(this, 'oddP').and.callThrough();
-  });
-
-  it('should return a boolean value', function() {
-    expect(_.some(this.oddP, this.empty)).toEqual(jasmine.any(Boolean));
-    expect(_.some(this.oddP, this.singleton)).toEqual(jasmine.any(Boolean));
-    expect(_.some(this.oddP, this.a)).toEqual(jasmine.any(Boolean));
-  });
-
-  it('should return false for any predicate on an empty array', function() {
-    expect(_.some(this.oddP, this.empty)).toBe(false);
-  });
-
-  it('should short-circuit', function() {
-    _.some(this.oddP, [0, 2, 4, 5, 7, 9]);
-    expect(this.oddP).toHaveBeenCalledWith(0);
-    expect(this.oddP).toHaveBeenCalledWith(2);
-    expect(this.oddP).toHaveBeenCalledWith(4);
-    expect(this.oddP).toHaveBeenCalledWith(5);
-
-    expect(this.oddP).not.toHaveBeenCalledWith(7);
-    expect(this.oddP).not.toHaveBeenCalledWith(9);
-  });
-
-  it('should find (or not find) things properly', function() {
-    expect(_.some(this.oddP, [0, 2, 4])).toBe(false);
-    expect(_.some(this.oddP, [1, 3, 5])).toBe(true);
-  });
-});
-
-describe('always', function() {
-  it('should return a function', function() {
-    var a = _.always(1);
-    expect(a).toEqual(jasmine.any(Function));
-  });
-
-  it('should return `always(undefined)` when called without arguments', function() {
-    expect(_.always()()).toBeUndefined();
-  });
-
-  it('should return an idempotent function', function() {
-    var a = _.always('abc');
-    for (var i=0; i<100; i++) {
-      expect(a()).toEqual('abc');
-    }
-  });
-});
-
 describe('isFunction', function() {
   it('should return a Boolean', function() {
-    _.forEach([void 0, null, {}, _.always(), console.log], function(o) {
+    _.forEach([void 0, null, {}, function(){}, console.log], function(o) {
       expect(_.isFunction(o)).toEqual(jasmine.any(Boolean));
     });
   });
@@ -178,28 +121,6 @@ describe('isFunction', function() {
     var nonFns = [1, 'abc', {}, console, true, 1.5, {a: 1}, null];
     _.forEach(nonFns, function(nf) {
       expect(_.isFunction(nf)).toBe(false);
-    });
-  });
-});
-
-describe('isArray', function() {
-  it('should return a Boolean', function() {
-    _.forEach([[], void 0, null, {}, true, _.always()], function(o) {
-      expect(_.isArray(o)).toEqual(jasmine.any(Boolean));
-    });
-  });
-
-  it('should return false for any non-array', function() {
-    var nonArrs = [void 0, null, 1, 3.14, 'abc', {}, _.always(), false];
-    _.forEach(nonArrs, function(na) {
-      expect(_.isArray(na)).toBe(false);
-    });
-  });
-
-  it('should return true for any array', function() {
-    var arrs = [[], [1], [1, 2, 3], [1, 'abc', 3.14, []]];
-    _.forEach(arrs, function(a) {
-      expect(_.isArray(a)).toBe(true);
     });
   });
 });

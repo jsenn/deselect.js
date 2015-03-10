@@ -1,6 +1,7 @@
 <html>
   <head>
     <style type="text/css" media="screen">
+/*
       .deselect--search-box {
         font-size: 2em;
       }
@@ -19,13 +20,12 @@
       }
       .deselect--dropdown {
         background-color: white;
-        border-width: 1px;
-        border-style: solid;
         font-size: 2em;
       }
       .deselect--focus {
         background-color: lightgray;
       }
+      */
     </style>
   </head>
   <body>
@@ -44,9 +44,10 @@
       <option value="12">Liberia</option>
       <option value="13">Morocco</option>
     </select>
+    <button></button>
     <script type="text/javascript" src="../dist/deselect.js"></script>
     <script>
-      deselect("select", {
+      deselect(document.getElementById('select'), {
         input: {
           attrs: {
             placeholder: 'Start typing your country'

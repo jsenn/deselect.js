@@ -24,22 +24,9 @@ module.exports = (function() {
     return xs_p;
   }
 
-  function some(p, xs) {
-    for (var i = 0; i < xs.length; i++) {
-      if (p(xs[i]))
-        return true;
-    }
-    return false;
-  }
-
   /* See http://stackoverflow.com/a/6000016 */
   function isFunction(object) {
     return !!(object && object.constructor && object.call && object.apply);
-  }
-
-  /* See http://stackoverflow.com/a/4775737 */
-  function isArray(object) {
-    return Object.prototype.toString.call(object) === '[object Array]';
   }
 
   /* Merge the second object into the first, recursing into nested objects.
@@ -104,7 +91,8 @@ module.exports = (function() {
     if (start === end) /* Nothing to highlight! */
       return s;
     var span = window.document.createElement('span');
-    span.className = opts.class;
+    merge(span, opts.attrs);
+    merge(span.style, opts.style);
     span.textContent = s.substring(start, end);
     return s.substring(0, start) + span.outerHTML + s.substring(end);
   }
@@ -125,14 +113,14 @@ module.exports = (function() {
 
   function addClass(className, el) {
     var classes = el.className.split(/\s+/);
-    if (!some(function(s) { return s === className; }, classes))
+    if (classes.indexOf(className) === -1)
       classes.push(className);
     el.className = classes.join(' ');
   }
 
   function removeClass(className, el) {
     var classes = el.className.split(/\s+/);
-    var newClasses = filter(function(s) { return s !== className; }, classes);
+    var newClasses = filter(neq(className), classes);
     el.className = newClasses.join(' ');
   }
 
@@ -160,103 +148,38 @@ module.exports = (function() {
                       function(node) { return node === ancestor; });
   }
 
-  function searchForElement(start, next) {
-    return searchList(start, next, function(node) { return node === null; },
-                      function(node) { return node instanceof window.Element; });
+  function neq(val) {
+    return function(x) { return x !== val; };
   }
 
-  function previousElementSibling(el) {
-    return searchForElement(el.previousSibling,
-                            function(node) { return node.previousSibling; });
-  }
-
-  function nextElementSibling(el) {
-    return searchForElement(el.nextSibling,
-                            function(node) { return node.nextSibling; });
-  }
-
-  function firstElementChild(el) {
-    return searchForElement(el.firstChild,
-                            function(node) { return node.nextSibling; });
-  }
-
-  function lastElementChild(el) {
-    return searchForElement(el.lastChild,
-                            function(node) { return node.previousSibling; });
-  }
-
-  function always(val) {
-    return function() { return val; };
-  }
-
-  var KeyNavigator = function(el, initial, methods) {
-    this.focussed = initial;
-
-    merge(this, methods); /* See KeyNavigator.prototype */
-
-    this.go = function(node) {
-      if (node !== null) {
-        this.unfocus(this.focussed);
-        this.focus(node);
-        this.focussed = node;
-      }
+  function get(attrName) {
+    return function(object) {
+      return object[attrName];
     };
+  }
 
-    /* Must be bound to this object. */
-    var onkeydown = function(e) {
-      var handleNavigationTo = function(node) {
-        if (node !== null) {
-          e.preventDefault();
-          e.stopPropagation();
-          return this.go(node);
-        }
-      }.bind(this);
-
-      if (e.altKey || e.ctrlKey || e.shiftKey)
-        /* Ignore the event. */
-        return true;
-
-      switch (e.keyCode) {
-        case 13: /* space */
-        case 32: /* enter */
-          e.stopPropagation();
-          return this.select(this.focussed);
-
-        case 37: /* left arrow key */
-          return handleNavigationTo(this.getLeft(this.focussed));
-        case 38: /* up arrow key */
-          return handleNavigationTo(this.getUp(this.focussed));
-        case 39: /* right arrow key */
-          return handleNavigationTo(this.getRight(this.focussed));
-        case 40: /* down arrow key */
-          return handleNavigationTo(this.getDown(this.focussed));
-
-        default:
-          /* Ignore the event. */
-          return true;
-      }
-    }.bind(this);
-
-    el.addEventListener('keydown', onkeydown, false);
-  };
-
-  KeyNavigator.prototype = {
-    getUp:    always(null),
-    getDown:  always(null),
-    getLeft:  always(null),
-    getRight: always(null),
-    focus:    always(void 0),
-    unfocus:  always(void 0),
-    select:   always(void 0)
-  };
+  /* Return a callback that will call the given (unary) function `f` after the
+   * callback hasn't been called in the given number of milliseconds. This can
+   * be used as a keypress event callback to avoid calling the function `f` too
+   * many times. (i.e. If the user types fast, there's probably no value in
+   * calling `f` on every key stroke.)
+   */
+  function keypresser(f, ms) {
+    var timeoutID;
+    return function(e) {
+      /* If there's an active timer, nuke it. */
+      if (timeoutID === void 0)
+        window.clearTimeout(timeoutID);
+      /* [re]start the timer. */
+      timeoutID = window.setTimeout(function() { return f(e); }, ms);
+    };
+  }
 
   return {
     forEach: forEach,
     map: map,
     filter: filter,
-    some: some,
     isFunction: isFunction,
-    isArray: isArray,
     merge: merge,
     hasAncestor: hasAncestor,
     search: search,
@@ -265,12 +188,9 @@ module.exports = (function() {
     removeClass: removeClass,
     insertAfter: insertAfter,
     maybeScrollIntoView: maybeScrollIntoView,
-    previousElementSibling: previousElementSibling,
-    nextElementSibling: nextElementSibling,
-    firstElementChild: firstElementChild,
-    lastElementChild: lastElementChild,
-    always: always,
-    KeyNavigator: KeyNavigator
+    get: get,
+    neq: neq,
+    keypresser: keypresser,
   };
 
 }());
