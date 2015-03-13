@@ -1,4 +1,6 @@
 module.exports = (function() {
+  'use strict';
+
   var classPrefix = 'deselect--';
 
   return {
@@ -113,6 +115,7 @@ module.exports = (function() {
         className: classPrefix + 'badge',
       },
       style: {
+        position: 'absolute',
         float: 'left',
         paddingLeft: '0.5em',
         paddingRight: '0.5em'
@@ -122,17 +125,10 @@ module.exports = (function() {
           className: classPrefix + 'badge-container'
         },
         style: {
-          /* Center the badge vertically. See
-           * http://www.smashingmagazine.com/2013/08/09/absolute-horizontal-vertical-centering-css/
-           */
-          display: 'table',
-          height: 'auto',
-          margin: 'auto',
+          /* Center the badge(s) vertically. */
           position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0
+          height: '100%',
+          top: 0
         }
       },
 

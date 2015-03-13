@@ -146,7 +146,7 @@ window.deselect = function(select, userOpts) {
     /* For every selected <option>, add a removable "badge" over the <input>. */
     input.style.paddingLeft = 0;
     _.forEach(state.selected, function(o) {
-      var badgeRect, paddingLeft;
+      var badgeRect, paddingLeft, contRect, badgeHeight, contHeight;
 
       var badge = optionToBadge(o);
       badgeContainer.appendChild(badge);
@@ -155,6 +155,13 @@ window.deselect = function(select, userOpts) {
       badgeRect = badge.getBoundingClientRect();
       paddingLeft = parseFloat(input.style.paddingLeft);
       input.style.paddingLeft = paddingLeft + badgeRect.right - badgeRect.left;
+
+      /* Centre the badge vertically within its container. */
+      badgeHeight = badgeRect.bottom - badgeRect.top;
+
+      contRect = badgeContainer.getBoundingClientRect();
+      contHeight = contRect.bottom - contRect.top;
+      badge.style.top = (contHeight - badgeHeight) / 2;
     });
   }
 
@@ -260,6 +267,8 @@ window.deselect = function(select, userOpts) {
 
 },{"./opts":2,"./util":3}],2:[function(require,module,exports){
 module.exports = (function() {
+  'use strict';
+
   var classPrefix = 'deselect--';
 
   return {
@@ -374,6 +383,7 @@ module.exports = (function() {
         className: classPrefix + 'badge',
       },
       style: {
+        position: 'absolute',
         float: 'left',
         paddingLeft: '0.5em',
         paddingRight: '0.5em'
@@ -383,17 +393,10 @@ module.exports = (function() {
           className: classPrefix + 'badge-container'
         },
         style: {
-          /* Center the badge vertically. See
-           * http://www.smashingmagazine.com/2013/08/09/absolute-horizontal-vertical-centering-css/
-           */
-          display: 'table',
-          height: 'auto',
-          margin: 'auto',
+          /* Center the badge(s) vertically. */
           position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0
+          height: '100%',
+          top: 0
         }
       },
 
